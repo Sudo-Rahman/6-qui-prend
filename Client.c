@@ -54,10 +54,12 @@ int main(int argc, char **argv)
 
     while (1)
     {
-        char *message = (char *) calloc(1024,sizeof (char *));
+        char *message = (char *) malloc(1024);
 
         scanf("%s",message);
         send(sock,message, strlen(message),0);
+        fflush(stdin);
+        fflush(stdout);
 
         free(message);
     }
@@ -69,16 +71,16 @@ int main(int argc, char **argv)
 void *listen_all_time(void *argv){
     while (1)
     {
-        char *buffer = (char *) calloc(1024,sizeof (char *));
+        char *buffer = (char *) malloc(1024);
         int n = 0;
 
         if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) < 0)
         {
             perror("recv()");
         }
+        buffer[n] = '\0';
 
         printf("%s\n", buffer);
-
 
         free(buffer);
     }

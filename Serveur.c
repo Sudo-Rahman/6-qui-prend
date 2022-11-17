@@ -107,6 +107,7 @@ void *listen_joueurs()
         j.socket = client;
 
         char *buffer = (char *) calloc(1024, sizeof(char *));
+        char *message = (char *) calloc(1024, sizeof(char *));
 
         if (recv(client, buffer, sizeof(buffer) - 1, 0) < 0)
         {
@@ -116,24 +117,26 @@ void *listen_joueurs()
         strcpy(j.pseudo, buffer);
 
         printf("Connection réaliser avec le joueur %s\n", j.pseudo);
-        char mes[1024] = "Vous avez rejoint le serveur, vous etes le joueur n°";
+        strcpy(message,"Vous avez rejoint le serveur, vous etes le joueur n°");
         char nb[8];
         sprintf(nb, "%i", compteur_joueur + 1);
-        strcat(mes, nb);
-        send(client, mes, strlen(mes), 0);
+        strcat(message, nb);
+        send(client, message, strlen(message), 0);
 
-        strcpy(mes, "Le joueur ");
-        strcat(mes, j.pseudo);
-        strcat(mes, " vient de se connecter");
-        printf("%s\n",mes);
+        printf("%s\n",message);
 
-        send_all_joueurs(joueurs, compteur_joueur, mes);
+        strcpy(message, "Le joueur ");
+        strcat(message, j.pseudo);
+        strcat(message, " vient de se connecter");
 
-        compteur_joueur++;
+        send_all_joueurs(joueurs, compteur_joueur, message);
 
         joueurs[compteur_joueur] = j;
 
+        compteur_joueur++;
+
         free(buffer);
+        free(message);
 
         pthread_t pthread;
 
