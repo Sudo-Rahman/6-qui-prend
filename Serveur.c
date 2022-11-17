@@ -8,6 +8,10 @@
 
 int main(int argc, char **argv)
 {
+    if(argc ==2){
+        PORT = atoi(argv[1]);
+    }
+
     int serveur_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if(serveur_socket == -1){
@@ -27,7 +31,7 @@ int main(int argc, char **argv)
         exit(errno);
     }
 
-    printf("socket lié avec succès\n");
+    printf("socket lié avec succès au port %i\n",PORT);
 
     listen(serveur_socket,5);
 

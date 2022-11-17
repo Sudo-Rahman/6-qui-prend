@@ -7,6 +7,10 @@
 int main(int argc, char **argv)
 {
 
+    if(argc == 3){
+        PORT = atoi(argv[1]);
+        strcpy(argv[2],hostname);
+    }
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
