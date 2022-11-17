@@ -2,6 +2,10 @@
 // Created by rahman on 16/11/22.
 //
 
+#ifndef SYSTEMES_ET_RESEAUX_PROJET_CLIENT_H
+#define SYSTEMES_ET_RESEAUX_PROJET_CLIENT_H
+
+
 #include <stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
@@ -16,15 +20,9 @@
 #include <time.h>
 #include <pcap/socket.h>
 
-#ifndef SYSTEMES_ET_RESEAUX_PROJET_CLIENT_H
-#define SYSTEMES_ET_RESEAUX_PROJET_CLIENT_H
+char *hostname = "127.0.0.1";
 
-#define INVALID_SOCKET -1
-#define SOCKET_ERROR -1
-#define closesocket(s) close(s)
-typedef struct sockaddr_in SOCKADDR_IN;
-typedef struct sockaddr SOCKADDR;
-typedef struct in_addr IN_ADDR;
+int PORT = 65534;
 
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_CLIENT_H

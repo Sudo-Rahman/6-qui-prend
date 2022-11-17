@@ -2,30 +2,28 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include <pcap/socket.h>
 
 #include "Serveur.h"
 
 
-
 int main(int argc, char **argv)
 {
-    SOCKET serveur_socket = socket(AF_INET, SOCK_STREAM, 0);
+    int serveur_socket = socket(AF_INET, SOCK_STREAM, 0);
 
-    if(serveur_socket == INVALID_SOCKET){
-        printf("erreur création socket");
+    if(serveur_socket == -1){
+        perror("erreur création socket");
         exit(errno);
     }
     printf("création socket\n");
 
-    SOCKADDR_IN serveur_addr;
+    struct sockaddr_in serveur_addr = {0};
 
     serveur_addr.sin_family = AF_INET;
     serveur_addr.sin_addr.s_addr = INADDR_ANY;
-    serveur_addr.sin_port = htons(65535);
+    serveur_addr.sin_port = htons(PORT);
 
-    if (bind(serveur_socket, (SOCKADDR *)&serveur_addr,sizeof(serveur_addr)) == -1){
-        printf("erreur socket liaison");
+    if (bind(serveur_socket, (struct sockaddr *)&serveur_addr,sizeof(struct sockaddr)) == -1){
+        perror("erreur socket liaison");
         exit(errno);
     }
 
@@ -36,16 +34,16 @@ int main(int argc, char **argv)
     while (1){
         printf("Attente client\n");
 
-        SOCKADDR_IN client_addr;
+        struct sockaddr_in client_addr = {0};
 
         int taille = (int) sizeof(serveur_addr);
 
-        SOCKET client = accept(serveur_socket, (SOCKADDR *)& serveur_addr, (socklen_t *)&taille);
+        int client = accept(serveur_socket, (struct sockaddr *)& serveur_addr, (socklen_t *)&taille);
 
         printf("connection réaliser avec un client\n");
         for (int i = 0; i < 50; ++i)
         {
-            char  *mes = "ici";
+            char  *mes = "ici\n";
             send(client, mes, strlen(mes),0);
         }
     }
