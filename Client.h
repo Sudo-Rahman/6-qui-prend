@@ -18,7 +18,7 @@
 #include<sys/wait.h>
 #include<signal.h>
 #include <time.h>
-#include <pcap/socket.h>
+#include <string.h>
 
 char *hostname = "127.0.0.1";
 

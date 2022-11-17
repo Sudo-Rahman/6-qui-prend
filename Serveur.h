@@ -18,9 +18,24 @@
 
 
 int PORT = 65534;
-#define MAX_CLIENTS     100
+#define MAX_JOUEURS 8
 
-#define BUF_SIZE    1024
+#define BUF_SIZE 1024
+
+typedef struct
+{
+    char *pseudo;
+    int numero_joueur;
+    int socket;
+    int pret ;
+
+} joueur;
+
+joueur init_joueur();
+
+void *listenJoueurs();
+
+void send_all_joueurs(joueur *joueurs , int nb_joueur, char *message);
 
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H

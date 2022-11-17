@@ -36,6 +36,14 @@ int main(int argc, char **argv)
         exit(errno);
     }
 
+    printf("Donner votre pseudo : ");
+
+    char pseudo[1024];
+    scanf( "%s", pseudo );
+    fflush(stdin);
+    fflush(stdout);
+    send(sock,pseudo,strlen(pseudo),0);
+
 
     while (1)
     {
@@ -49,7 +57,7 @@ int main(int argc, char **argv)
         }
 
         buffer[n] = '\0';
-        printf("%s", buffer);
+        printf("%s\n", buffer);
     }
 
 
