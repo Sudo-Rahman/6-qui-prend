@@ -24,5 +24,6 @@ char *hostname = "127.0.0.1";
 
 int PORT = 65534;
 
+void *listen_all_time(void *);
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_CLIENT_H

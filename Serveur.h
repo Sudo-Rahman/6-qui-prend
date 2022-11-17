@@ -33,9 +33,11 @@ typedef struct
 
 joueur init_joueur();
 
-void *listenJoueurs();
+void *listen_joueurs();
 
 void send_all_joueurs(joueur *joueurs , int nb_joueur, char *message);
+
+void *joueur_pret(void *);
 
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H

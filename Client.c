@@ -3,6 +3,9 @@
 //
 
 #include "Client.h"
+#include <pthread.h>
+
+int sock;
 
 int main(int argc, char **argv)
 {
@@ -12,7 +15,7 @@ int main(int argc, char **argv)
         strcpy(argv[2],hostname);
     }
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
     {
         perror("Impossible de créer le socket");
@@ -44,22 +47,39 @@ int main(int argc, char **argv)
     fflush(stdout);
     send(sock,pseudo,strlen(pseudo),0);
 
+    pthread_t pthread;
+
+    pthread_create(&pthread,NULL,&listen_all_time,NULL);
+
 
     while (1)
     {
-        char buffer[1024];
+        char *message = (char *) calloc(1024,sizeof (char *));
+
+        scanf("%s",message);
+        send(sock,message, strlen(message),0);
+
+        free(message);
+    }
+
+
+    return 0;
+}
+
+void *listen_all_time(void *argv){
+    while (1)
+    {
+        char *buffer = (char *) calloc(1024,sizeof (char *));
         int n = 0;
 
         if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) < 0)
         {
             perror("recv()");
-            exit(errno);
         }
 
-        buffer[n] = '\0';
         printf("%s\n", buffer);
+
+
+        free(buffer);
     }
-
-
-    return 0;
 }
