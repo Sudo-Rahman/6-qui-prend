@@ -7,6 +7,13 @@
 
 int sock;
 
+
+/**
+ * @brief Main.
+ * @param argc
+ * @param argv
+ * @return int
+ */
 int main(int argc, char **argv)
 {
 
@@ -52,6 +59,7 @@ int main(int argc, char **argv)
     pthread_create(&pthread,NULL,&listen_all_time,NULL);
 
 
+    // boucle pour envoyer des messages au serveur
     while (1)
     {
         char *message = (char *) malloc(1024);
@@ -68,20 +76,26 @@ int main(int argc, char **argv)
     return 0;
 }
 
+
+/**
+ * @brief Fonction qui écoute à l'infini sur le socket du serveur.
+ * @param argv
+ * @return
+ */
 void *listen_all_time(void *argv){
     while (1)
     {
-        char *buffer = (char *) malloc(1024);
+        char buffer[1024];
         int n = 0;
 
         if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) < 0)
         {
             perror("recv()");
+            exit(errno);
         }
         buffer[n] = '\0';
 
         printf("%s\n", buffer);
-
-        free(buffer);
+        fflush(stdout);
     }
 }

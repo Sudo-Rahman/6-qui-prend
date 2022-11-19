@@ -6,13 +6,21 @@
 
 #include "Serveur.h"
 
-joueur joueurs[8];
+joueur *joueurs[8];
 int compteur_joueur = 0;
+
 
 int serveur_socket;
 
 struct sockaddr_in serveur_addr = {0};
 
+
+/**
+ * @brief Main.
+ * @param argc
+ * @param argv
+ * @return int
+ */
 int main(int argc, char **argv)
 {
     if (argc == 2)
@@ -50,6 +58,12 @@ int main(int argc, char **argv)
     pthread_create(&thread, NULL, &listen_joueurs, NULL);
 
 
+    while (all_joueur_pret() == 0)
+    {}
+
+    send_all_joueurs(joueurs, compteur_joueur, "Tous les joueurs sont pret la partie va commencer.");
+    printf("La partie commence.\n");
+
     while (1)
     {
 
@@ -59,17 +73,25 @@ int main(int argc, char **argv)
 }
 
 
+/**
+ * @brief Fonction qui ecoute en continu le socket du joueur en parametre, jusqu’à qu’il mette pret.
+ * @param argv
+ * @return void
+ */
 void *joueur_pret(void *argv)
 {
-    joueur  *j = (joueur *) argv;
+    joueur *j = (joueur *) argv;
     char *buffer = (char *) calloc(128, sizeof(char *));
-    char *message = (char *) calloc(128, sizeof(char *));
+    char message[1024];
+
+    strcpy(message, "Envoyer 'pret' pour vous mettre pret.");
+
+    send(j->socket, message, strlen(message), 0);
 
     while (1)
     {
         recv(j->socket, buffer, sizeof(buffer) - 1, 0);
-        printf("%s\n", buffer);
-        if (strcmp(buffer, "pret") ==0)
+        if (strcmp(buffer, "pret") == 0)
         {
             j->pret = 1;
             strcpy(message, "Le joueur ");
@@ -80,22 +102,20 @@ void *joueur_pret(void *argv)
         }
     }
     free(buffer);
-    free(message);
 
     return 0;
 }
 
+
+/**
+ * @brief Fonction qui accepte ou non les clients qui se connecte au serveur.
+ * @return void
+ */
 void *listen_joueurs()
 {
     while (1)
     {
         printf("Attente client\n");
-
-        if (compteur_joueur == MAX_JOUEURS)
-        {
-            send_all_joueurs(joueurs, compteur_joueur, "nombre max de joueur atteint la partie va commencé.");
-            break;
-        }
 
         struct sockaddr_in client_addr = {0};
 
@@ -103,8 +123,23 @@ void *listen_joueurs()
 
         int client = accept(serveur_socket, (struct sockaddr *) &serveur_addr, (socklen_t * ) & taille);
 
-        joueur j = init_joueur();
-        j.socket = client;
+        if(all_joueur_pret()){
+            char mes[1024];
+
+            if(compteur_joueur == MAX_JOUEURS)
+                strcpy(mes,"Le nombre de joueurs maximum a été atteint.");
+            else
+                strcpy(mes,"La partie à deja commencé.");
+
+            send(client, mes, strlen(mes), 0);
+
+
+            close(client);
+            continue;
+        }
+
+        joueur *j = init_joueur();
+        j->socket = client;
 
         char *buffer = (char *) calloc(1024, sizeof(char *));
         char *message = (char *) calloc(1024, sizeof(char *));
@@ -114,62 +149,84 @@ void *listen_joueurs()
             perror("bug reception");
             exit(-1);
         }
-        strcpy(j.pseudo, buffer);
+        strcpy(j->pseudo, buffer);
 
-        printf("Connection réaliser avec le joueur %s\n", j.pseudo);
-        strcpy(message,"Vous avez rejoint le serveur, vous etes le joueur n°");
+        printf("Connection réaliser avec le joueur %s\n", j->pseudo);
+        strcpy(message, "Vous avez rejoint le serveur, vous etes le joueur n°");
         char nb[8];
         sprintf(nb, "%i", compteur_joueur + 1);
         strcat(message, nb);
+        strcat(message, ".");
         send(client, message, strlen(message), 0);
 
-        printf("%s\n",message);
-
         strcpy(message, "Le joueur ");
-        strcat(message, j.pseudo);
+        strcat(message, j->pseudo);
         strcat(message, " vient de se connecter");
 
         send_all_joueurs(joueurs, compteur_joueur, message);
 
         joueurs[compteur_joueur] = j;
 
+
         compteur_joueur++;
+
+        if (compteur_joueur == MAX_JOUEURS)
+        {
+            send_all_joueurs(joueurs, compteur_joueur, "nombre max de joueur atteint la partie va commencer.");
+            break;
+        }
+
 
         free(buffer);
         free(message);
 
         pthread_t pthread;
 
-        pthread_create(&pthread,NULL,&joueur_pret,(void *)&j);
+        pthread_create(&pthread, NULL, &joueur_pret, (void *) j);
     }
 
-    while (1)
-    {
-        struct sockaddr_in client_addr = {0};
-
-        int taille = (int) sizeof(serveur_addr);
-
-        int client = accept(serveur_socket, (struct sockaddr *) &serveur_addr, (socklen_t * ) & taille);
-
-        char *mes = "Le nombre de joueurs maximum a été atteint";
-
-        send(client, mes, strlen(mes), 0);
-
-        close(client);
-    }
 }
 
-void send_all_joueurs(joueur *joueurs, int nb_joueur, char *message)
+/**
+ * @brief Fonction qui envoie le message en parametre a tous les joueurs.
+ * @param joueurs
+ * @param nb_joueur
+ * @param message
+ */
+void send_all_joueurs(joueur **joueurs, int nb_joueur, char *message)
 {
     for (int i = 0; i < nb_joueur; ++i)
-        send(joueurs[i].socket, message, strlen(message), 0);
+        send(joueurs[i]->socket, message, strlen(message), 0);
 }
 
-joueur init_joueur()
+/**
+ * @brief Fonction qui creé un nouveau pointeur de joueur et le renvoie.
+ * @return joueur
+ */
+joueur *init_joueur()
 {
-    joueur j;
-    j.pseudo = (char *) calloc(128, sizeof(char *));
-    j.pret = 0;
+    joueur *j = (joueur *) malloc(1);
+    j->pseudo = (char *) calloc(128, sizeof(char *));
+    j->pret = 0;
 
     return j;
+}
+
+/**
+ * @brief Fonction qui retourne 1 si tous les joueurs sont pret et 0 sinon.
+ * @return 1 ou 0
+ */
+int all_joueur_pret()
+{
+    if (compteur_joueur == 0)
+        return 0;
+    int compteur = 0;
+    for (int i = 0; i < compteur_joueur; i++)
+    {
+        if (joueurs[i]->pret == 1)
+            compteur++;
+    }
+    if (compteur == compteur_joueur)
+        return 1;
+    return 0;
 }
