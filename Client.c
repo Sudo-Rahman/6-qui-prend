@@ -88,7 +88,7 @@ void *listen_all_time(void *argv){
         char buffer[1024];
         int n = 0;
 
-        if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) < 0)
+        if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) ==0)
         {
             perror("recv()");
             exit(errno);
