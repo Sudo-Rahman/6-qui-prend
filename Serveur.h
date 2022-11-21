@@ -16,11 +16,15 @@
 #include <unistd.h> /* close */
 #include <netdb.h> /* gethostbyname */
 
+#include "Jeu.h"
+
 
 int PORT = 65534;
 #define MAX_JOUEURS 8
 
 #define BUF_SIZE 1024
+
+
 
 typedef struct
 {

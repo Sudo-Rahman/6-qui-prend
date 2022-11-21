@@ -6,8 +6,8 @@
 
 #include "Serveur.h"
 
+
 joueur *joueurs[8];
-int compteur_joueur = 0;
 
 
 int serveur_socket;
@@ -61,8 +61,21 @@ int main(int argc, char **argv)
     while (all_joueur_pret() == 0)
     {}
 
-    send_all_joueurs(joueurs, compteur_joueur, "Tous les joueurs sont pret la partie va commencer.");
+    send_all_joueurs(joueurs, nb_Joueur, "Tous les joueurs sont pret la partie va commencer.");
     printf("La partie commence.\n");
+
+    printf("ici\n");
+
+    Jeu jeu;
+    printf("ici\n");
+
+    initJeu(jeu);
+    printf("ici\n");
+
+
+    send_all_joueurs(joueurs, nb_Joueur,affichePlateau(jeu));
+    printf("ici\n");
+
 
     while (1)
     {
@@ -97,7 +110,7 @@ void *joueur_pret(void *argv)
             strcpy(message, "Le joueur ");
             strcat(message, j->pseudo);
             strcat(message, " à mis pret");
-            send_all_joueurs(joueurs, compteur_joueur, message);
+            send_all_joueurs(joueurs, nb_Joueur, message);
             break;
         }
     }
@@ -126,7 +139,7 @@ void *listen_joueurs()
         if(all_joueur_pret()){
             char mes[1024];
 
-            if(compteur_joueur == MAX_JOUEURS)
+            if(nb_Joueur == MAX_JOUEURS)
                 strcpy(mes,"Le nombre de joueurs maximum a été atteint.");
             else
                 strcpy(mes,"La partie à deja commencé.");
@@ -154,7 +167,7 @@ void *listen_joueurs()
         printf("Connection réaliser avec le joueur %s\n", j->pseudo);
         strcpy(message, "Vous avez rejoint le serveur, vous etes le joueur n°");
         char nb[8];
-        sprintf(nb, "%i", compteur_joueur + 1);
+        sprintf(nb, "%i", nb_Joueur + 1);
         strcat(message, nb);
         strcat(message, ".");
         send(client, message, strlen(message), 0);
@@ -163,16 +176,16 @@ void *listen_joueurs()
         strcat(message, j->pseudo);
         strcat(message, " vient de se connecter");
 
-        send_all_joueurs(joueurs, compteur_joueur, message);
+        send_all_joueurs(joueurs, nb_Joueur, message);
 
-        joueurs[compteur_joueur] = j;
+        joueurs[nb_Joueur] = j;
 
 
-        compteur_joueur++;
+        nb_Joueur++;
 
-        if (compteur_joueur == MAX_JOUEURS)
+        if (nb_Joueur == MAX_JOUEURS)
         {
-            send_all_joueurs(joueurs, compteur_joueur, "nombre max de joueur atteint la partie va commencer.");
+            send_all_joueurs(joueurs, nb_Joueur, "nombre max de joueur atteint la partie va commencer.");
             break;
         }
 
@@ -218,15 +231,15 @@ joueur *init_joueur()
  */
 int all_joueur_pret()
 {
-    if (compteur_joueur == 0)
+    if (nb_Joueur == 0)
         return 0;
     int compteur = 0;
-    for (int i = 0; i < compteur_joueur; i++)
+    for (int i = 0; i < nb_Joueur; i++)
     {
         if (joueurs[i]->pret == 1)
             compteur++;
     }
-    if (compteur == compteur_joueur)
+    if (compteur == nb_Joueur)
         return 1;
     return 0;
 }
