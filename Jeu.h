@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <time.h>
 #include "Color.h"
 
 #define MAX_JOUEURS 10
@@ -24,7 +25,7 @@ typedef struct Joueur
 {
     unsigned short NB_TETE, NB_DEFAITE;
     Carte carte[10];
-}Joueur;
+} Joueur;
 
 
 typedef struct Jeu
@@ -32,9 +33,9 @@ typedef struct Jeu
     Carte **plateau;
     Joueur *joueur[MAX_JOUEURS];
     Carte listeCarte[104];
-}Jeu;
+} Jeu;
 
-unsigned int isOver = 0, tour = 1, nb_Joueur =0, nb_Partie = 0, nb_TeteMax = 10, nb_MancheMax = 900;
+unsigned int isOver = 0, tour = 1, nb_Joueur = 0, nb_Partie = 0, nb_TeteMax = 10, nb_MancheMax = 900;
 unsigned short nextPartie = 0;
 struct timeval begin, end; // Pour calculer la durée d'une partie
 double duree_total = 0;
@@ -149,13 +150,6 @@ Carte CreateCarte(unsigned short i);
  */
 int getCarteDeLaListe(Jeu *jeu);
 
-/**
- * @details Fonction qui affiche les cartes que le joueur peut poser
- * @param jeu
- * @param idJoueur
- * @return char*
- */
-char *AfficheCarteJoueur(Jeu jeu, int idJoueur);
 
 /**
  * @details Fonction qui distribue 10 des cartes aux joueurs
@@ -215,21 +209,23 @@ unsigned short getCarteRestante(Jeu jeu);
  */
 unsigned short getCartePlusPetiteDuPlateau(Jeu jeu);
 
-void set_joueurs(Jeu *jeu, Joueur *joueurs[], int nb_joueur);
+/**
+ * @brief Retourne sous forme de chaine de charactere les cartes du joueur en parametre.
+ * @param joueur
+ * @return La liste des cartes du Joueur joueur.
+ */
+char *affiche_joueur_cartes(Joueur *joueur);
 
-void set_joueurs(Jeu *jeu, Joueur *joueurs[], int nb_joueur){
-    for(int i = 0; i< nb_joueur; i++){
-        jeu->joueur[i] = joueurs[i];
-    }
-}
 
 
-void initJeu(Jeu *jeu) {
+
+void initJeu(Jeu *jeu)
+{
 
     jeu->plateau = creePlateau(); // Création du plateau de carte 4*6
 
     //Creation des 104 cartes avec numéro de tête random
-    for (int i = 0; i < 104; i++) jeu->listeCarte[i] = CreateCarte(i+1);
+    for (int i = 0; i < 104; i++) jeu->listeCarte[i] = CreateCarte(i + 1);
 
     //SI c'est la premiere partie, on initialise le nombre de défaites à 0.
     if (nb_Partie == 0) for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->NB_DEFAITE = 0;
@@ -242,7 +238,8 @@ void initJeu(Jeu *jeu) {
     for (int i = 0; i < 4; i++) for (int j = 0; j < 6; j++) jeu->plateau[i][j] = carte_0;
 
     //Carte de la premiere ligne du plateau distribué
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++)
+    {
         int rd = getCarteDeLaListe(jeu);
         jeu->listeCarte[rd].isPicked = 1;
         jeu->plateau[i][0] = jeu->listeCarte[rd];
@@ -250,13 +247,16 @@ void initJeu(Jeu *jeu) {
     DistributionCarteAuxJoueurs(jeu);
 }
 
-void Play(Jeu jeu) {
+void Play(Jeu jeu)
+{
     gettimeofday(&begin, 0); //Initialisation du temps quand le jeu commence
     //Tant qu'un joueur n'a pas 66 tete, le jeu tourne
     printf("%s", RecapRegle(jeu)); // Affichage des règles du jeu à l'utilisateur
-    while (isOver != 1) {
+    while (isOver != 1)
+    {
         printf(BOLD_CYAN"\n\t*** ROUND [%d] ***\n"RESET, tour);
-        for (int tourJoueur = 0; tourJoueur < nb_Joueur; tourJoueur++) {
+        for (int tourJoueur = 0; tourJoueur < nb_Joueur; tourJoueur++)
+        {
             printf(BOLD_CYAN"\n\t*** MANCHE [%d] ***\n"RESET,
                    abs(getNbCarteUtilisableDuJoueur(jeu, (unsigned short) tourJoueur) - 10));
             printf("%s", affichePlateau(jeu)); //Affichage du plateau avec les nouvelles valeurs dedans
@@ -269,15 +269,19 @@ void Play(Jeu jeu) {
 
             unsigned short NumeroDeCarte; //Numéro de la carte que le joueur va tirer
 
-            if (tourJoueur == nb_Joueur - 1) { //L'IA qui joue
+            if (tourJoueur == nb_Joueur - 1)
+            { //L'IA qui joue
 //                AfficheCarteJoueur(jeu, tourJoueur);
-                do {
+                do
+                {
                     NumeroDeCarte = rand() % 10; // Génère une carte aléatoire que l'IA va jouer
                 } while (jeu.joueur[tourJoueur]->carte[NumeroDeCarte].isUsed == 1);
 //                printf("L'IA à joué %d\n", next);
-            } else { //Le joueur
+            } else
+            { //Le joueur
                 printf("%s", AfficheCarteJoueur(jeu, tourJoueur));
-                do {
+                do
+                {
                     printf("Quelle carte voulez-vous poser ?\n>");
                     NumeroDeCarte = AskNombreUser(0, 9);
 
@@ -301,17 +305,21 @@ void Play(Jeu jeu) {
                                                                        jeu.joueur[tourJoueur]->carte[NumeroDeCarte].Numero));
 
             //Verification si une ligne est complète ou pas
-            for (int checkLigne = 0; checkLigne < 6; checkLigne++) {
-                if (jeu.plateau[colonne][ligne].Numero == 0) {
+            for (int checkLigne = 0; checkLigne < 6; checkLigne++)
+            {
+                if (jeu.plateau[colonne][ligne].Numero == 0)
+                {
                     //On pose la carte sur le plateau à l'emplacement où elle doit être
                     jeu.plateau[colonne][ligne] = jeu.joueur[tourJoueur]->carte[NumeroDeCarte];
                     break;
                 }
                     //CAS où une ligne est complète
-                else {
+                else
+                {
 
                     //CAS où joueur pose une 6è carte plus petite que le plateau
-                    if (jeu.joueur[tourJoueur]->carte[NumeroDeCarte].Numero < getCartePlusPetiteDuPlateau(jeu)) {
+                    if (jeu.joueur[tourJoueur]->carte[NumeroDeCarte].Numero < getCartePlusPetiteDuPlateau(jeu))
+                    {
                         printf(BOLD_MAGENTA"Vous avez posé la carte la plus petite du plateau\nQuelle rangée voulez vous prendre [0-3]?\n>"RESET);
                         colonne = AskNombreUser(0, 3);
                     }
@@ -324,20 +332,23 @@ void Play(Jeu jeu) {
 
                     //Cas ou + de 6 cartes sur une ligne, le joueur prend toutes les cartes + les tetes
                     int sommeDesTetes = 0;
-                    for (int boucleSommeTete = 0; boucleSommeTete < 6; boucleSommeTete++) {
+                    for (int boucleSommeTete = 0; boucleSommeTete < 6; boucleSommeTete++)
+                    {
                         sommeDesTetes += jeu.plateau[colonne][boucleSommeTete].Tete;
                     }
                     jeu.joueur[tourJoueur]->NB_TETE += sommeDesTetes; // Le joueur prend la somme des têtes
 
                     //On remet les cartes de la ligne concernées du plateau dans la pioche pour ne pas manquer de carte
-                    for (int carteDansPioche = 0; carteDansPioche < 6; carteDansPioche++) {
+                    for (int carteDansPioche = 0; carteDansPioche < 6; carteDansPioche++)
+                    {
                         unsigned short CarteAMettreDansPioche = jeu.plateau[colonne][carteDansPioche].Numero;
                         jeu.listeCarte[CarteAMettreDansPioche].isPicked = 0;
                         jeu.listeCarte[CarteAMettreDansPioche].isUsed = 0;
                     }
 
                     //Parcours pour reset le plateau à la colonne en question
-                    for (int boucleResetLigne = 0; boucleResetLigne < 6; boucleResetLigne++) {
+                    for (int boucleResetLigne = 0; boucleResetLigne < 6; boucleResetLigne++)
+                    {
                         Carte carte_0 = {0, 0, 0, 0};
                         jeu.plateau[colonne][boucleResetLigne] = carte_0;
                     }
@@ -350,7 +361,8 @@ void Play(Jeu jeu) {
             fprintf(fichier_log, "|------------------------------------------------------------------|\n");
 
             //VERIFIE LE NOMBRE DE TETE DU JOUEUR COURANT
-            if (jeu.joueur[tourJoueur]->NB_TETE >= nb_TeteMax) {
+            if (jeu.joueur[tourJoueur]->NB_TETE >= nb_TeteMax)
+            {
                 printf(BOLD_YELLOW"***FIN DE LA PARTIE***\n"RESET);
                 printf(BOLD_YELLOW"***NOMBRE DE TETES MAXIMAL ATTEINT***\n"RESET);
                 fprintf(fichier_log, "***NOMBRE DE TETES MAXIMAL ATTEINT***\n");
@@ -362,7 +374,8 @@ void Play(Jeu jeu) {
             }
 
             //Cas où un joueur n'a pas de carte à jouer, on lui en redonne 10 + affichage du nombre de cartes restantes dans la pioche
-            if (getNbCarteUtilisableDuJoueur(jeu, tourJoueur) == 0) {
+            if (getNbCarteUtilisableDuJoueur(jeu, tourJoueur) == 0)
+            {
                 printf(BOLD_YELLOW"Le joueur %d reçoit 10 cartes\n"RESET, tourJoueur);
                 fprintf(fichier_log, "Le joueur %d reçoit 10 cartes\n", tourJoueur);
                 DistributionCarteAuJoueur(&jeu, tourJoueur);
@@ -375,7 +388,8 @@ void Play(Jeu jeu) {
         tour++; // Incrémente la manche au fur et à mesure
 
         //VERIFIE LE NOMBRE DE MANCHE DU JOUEUR COURANT
-        if (tour >= nb_MancheMax) {
+        if (tour >= nb_MancheMax)
+        {
             printf(BOLD_YELLOW"***FIN DE LA PARTIE***\n"RESET);
             printf(BOLD_YELLOW"***NOMBRE DE MANCHES MAXIMAL ATTEINT***\n"RESET);
             fprintf(fichier_log, "***NOMBRE DE MANCHES MAXIMAL ATTEINT***");
@@ -388,7 +402,8 @@ void Play(Jeu jeu) {
     nb_Partie++;
 
     //DEBUG UN TRUC QUI MARCHE PAS
-    for (int i = 0; i < nb_Joueur; ++i) {
+    for (int i = 0; i < nb_Joueur; ++i)
+    {
         printf("***DEFAITE > %d\n", jeu.joueur[i]->NB_DEFAITE);
     }
 
@@ -409,24 +424,28 @@ void Play(Jeu jeu) {
 
 }
 
-void resetJeu(Jeu *jeu) {
+void resetJeu(Jeu *jeu)
+{
     isOver = 0;
     tour = 1;
     initJeu(jeu);
 }
 
-void freeJeu(Jeu jeu) {
+void freeJeu(Jeu jeu)
+{
     for (int i = 0; i < 6; i++) free(jeu.plateau[i]);
     free(jeu.plateau);
 }
 
-Carte **creePlateau() {
+Carte **creePlateau()
+{
     Carte **plateau = (Carte **) malloc(6 * sizeof(Carte *));
     for (int i = 0; i < 6; i++) plateau[i] = (Carte *) malloc(6 * sizeof(Carte));
     return plateau;
 }
 
-char *affichePlateau(Jeu jeu) {
+char *affichePlateau(Jeu jeu)
+{
     char *res = (char *) malloc(1024 * sizeof(char));
 
     sprintf(res, BOLD_HIGH_WHITE"\t\t\t\t\t\t\t\tPLATEAU:\n"RESET);
@@ -441,10 +460,13 @@ char *affichePlateau(Jeu jeu) {
     return res;
 }
 
-unsigned short getCartePlusPetiteDuPlateau(Jeu jeu) {
+unsigned short getCartePlusPetiteDuPlateau(Jeu jeu)
+{
     unsigned short min = 104; //Min théorique dans la liste de carte
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 6; j++) {
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 6; j++)
+        {
             if (jeu.plateau[i][j].Numero == 0) continue; //Saute la carte quand elle vaut 0 car ce n'est pas une carte
             else if (jeu.plateau[i][j].Numero < min) min = jeu.plateau[i][j].Numero;
         }
@@ -452,9 +474,11 @@ unsigned short getCartePlusPetiteDuPlateau(Jeu jeu) {
     return min; // Retourne le numero de carte le plus petit du plateau
 }
 
-void PrintTableau(Jeu jeu) {
+void PrintTableau(Jeu jeu)
+{
     fprintf(fichier_log, "\t\t\t\t\t\t\t\tPLATEAU:\n");
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++)
+    {
         for (int j = 0; j < 6; j++)
             fprintf(fichier_log, "\t[%d-%d]\t", jeu.plateau[i][j].Numero, jeu.plateau[i][j].Tete);
         fprintf(fichier_log, "\n");
@@ -462,41 +486,51 @@ void PrintTableau(Jeu jeu) {
     fprintf(fichier_log, "\n");
 }
 
-Carte CreateCarte(unsigned short i) {
+Carte CreateCarte(unsigned short i)
+{
+    srand(time(NULL));
+
     Carte c = {i, (rand() % 7) + 1, 0, 0};
     return c;
 }
 
-int getCarteDeLaListe(Jeu *jeu) {
+int getCarteDeLaListe(Jeu *jeu)
+{
     int tmp[105];
     int cpt = 0;
     //Parcours de la liste pour trouver les cartes pas encore prise
-    for (int i = 0; i < 104; i++) {
-        if (jeu->listeCarte[i].isPicked == 0) {
+    for (int i = 0; i < 104; i++)
+    {
+        if (jeu->listeCarte[i].isPicked == 0)
+        {
             tmp[cpt] = jeu->listeCarte[i].Numero;
             cpt++;
         }
     }
 
     //Si le nombre de cartes restantes est supérieur à 0, on va tirer une carte aléatoire de notre tableau, sinon on ne retourne pas de valeur de carte.
-    if (cpt > 0) {
+    if (cpt > 0)
+    {
         int tirage[cpt];
         for (int i = 0; i < cpt; i++) tirage[i] = tmp[i];
         return tirage[rand() % cpt];
-    } else {
+    } else
+    {
         printf(BOLD_RED"PLUS DE CARTE DANS LE PAQUET\n"RESET);
         return 999;
     }
 }
 
-char *AfficheCarteJoueur(Jeu jeu, int idJoueur) {
-    char *tmp = malloc(350 * sizeof(char));
+char *affiche_joueur_cartes(Joueur *joueur)
+{
+    char *tmp = malloc(1024 * sizeof(char));
 
-    for (int i = 0; i < 10; i++) {
-        if (jeu.joueur[idJoueur]->carte[i].isUsed == 0)
+    for (int i = 0; i < 10; i++)
+    {
+        if (joueur->carte[i].isUsed == 0)
 //            printf("Carte %d > Numéro[%d] Tete[%d]\n", i, jeu.joueur[idJoueur].carte[i].Numero, jeu.joueur[idJoueur].carte[i].Tete);
-            sprintf(tmp + strlen(tmp), "Carte %d > Numéro[%d] Tete[%d]\n", i, jeu.joueur[idJoueur]->carte[i].Numero,
-                    jeu.joueur[idJoueur]->carte[i].Tete);
+            sprintf(tmp + strlen(tmp), "Carte %d > Numéro[%d] Tete[%d]\n", i, joueur->carte[i].Numero,
+                    joueur->carte[i].Tete);
     }
     char *res = malloc(strlen(tmp) * sizeof(char));
     strcpy(res, tmp);
@@ -504,15 +538,19 @@ char *AfficheCarteJoueur(Jeu jeu, int idJoueur) {
     return res;
 }
 
-unsigned short getCarteRestante(Jeu jeu) {
+unsigned short getCarteRestante(Jeu jeu)
+{
     unsigned short cpt = 0;
     for (int i = 0; i < 104; i++) if (jeu.listeCarte[i].isPicked == 0) cpt++;
     return cpt;
 }
 
-void DistributionCarteAuxJoueurs(Jeu *jeu) {
-    for (int i = 0; i < nb_Joueur; i++) {
-        for (int j = 0; j < 10; j++) {
+void DistributionCarteAuxJoueurs(Jeu *jeu)
+{
+    for (int i = 0; i < nb_Joueur; i++)
+    {
+        for (int j = 0; j < 10; j++)
+        {
             unsigned short rd = getCarteDeLaListe(jeu);
             jeu->listeCarte[rd].isPicked = 1;
             jeu->joueur[i]->carte[j] = jeu->listeCarte[rd];
@@ -520,12 +558,16 @@ void DistributionCarteAuxJoueurs(Jeu *jeu) {
     }
 }
 
-unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte) {
+unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte)
+{
     int tabLastNumber[4];
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 6; j++) {
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 6; j++)
+        {
             //Recupère dernier nombre des lignes du plateau
-            if (jeu.plateau[i][j].Numero != 0) {
+            if (jeu.plateau[i][j].Numero != 0)
+            {
                 tabLastNumber[i] = jeu.plateau[i][j].Numero;
             } else break;
         }
@@ -533,12 +575,15 @@ unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte) {
     int min = 104; // La valeur maximale d'une carte est par défaut le minimum
     int position = 0;
     //Calcul la différence d'écart avec ces nombres
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++)
+    {
         tabLastNumber[i] = abs(tabLastNumber[i] - numeroCarte);
     }
     //On cherche le minimum du tableau qui sera là où on pose la carte
-    for (int i = 0; i < 4; i++) {
-        if (tabLastNumber[i] < min) {
+    for (int i = 0; i < 4; i++)
+    {
+        if (tabLastNumber[i] < min)
+        {
             min = tabLastNumber[i];
             position = i;
         }
@@ -546,10 +591,13 @@ unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte) {
     return position; //Retourne la position de la colonne au rang n-1
 }
 
-unsigned short getLastPositionDeLaLigne(Jeu jeu, int colonne) {
+unsigned short getLastPositionDeLaLigne(Jeu jeu, int colonne)
+{
     unsigned short lastPosition = 0;
-    for (short i = 0; i < 6; i++) {
-        if (jeu.plateau[colonne][i].Numero == 0) {
+    for (short i = 0; i < 6; i++)
+    {
+        if (jeu.plateau[colonne][i].Numero == 0)
+        {
             lastPosition = i;
             break;
         }
@@ -557,23 +605,27 @@ unsigned short getLastPositionDeLaLigne(Jeu jeu, int colonne) {
     return lastPosition;
 }
 
-int AskNombreUser(int min, int max) {
+int AskNombreUser(int min, int max)
+{
     char str[16] = "";
     scanf("%s", str);
     if (strlen(str) > 16) str[0] = '\0'; //Gestion cas ou nombre est trop grand pour pas crash le programme
 
     //SI utilisateur veut arreter le jeu en appuyant sur x
-    if (strcmp(str, "x") == 0 || strcmp(str, "X") == 0) {
+    if (strcmp(str, "x") == 0 || strcmp(str, "X") == 0)
+    {
         printf(BOLD_RED"ARRET DU JEU...\n"RESET);
         ForceFinDuJeu();
         return 0;
     }
     int nombre = atoi(str);//Conversion de la chaine de caractère en nombre entier pour savoir le nombre entré
-    while (nombre < min || nombre > max) {
+    while (nombre < min || nombre > max)
+    {
         printf(BOLD_RED"La valeur doit être comprise entre [%d-%d], vous avez entré : %d\n>"RESET, min, max, nombre);
         scanf("%s", str);
         if (strlen(str) > 16) str[0] = '\0';
-        if (strcmp(str, "x") == 0 || strcmp(str, "X") == 0) {
+        if (strcmp(str, "x") == 0 || strcmp(str, "X") == 0)
+        {
             printf(BOLD_RED"ARRET DU JEU...\n"RESET);
             ForceFinDuJeu();
             return 0;
@@ -588,7 +640,8 @@ int AskNombreUser(int min, int max) {
     return nombre;
 }
 
-char *Statistique(Jeu jeu) {
+char *Statistique(Jeu jeu)
+{
 
     char *tmp = malloc(300 * sizeof(char));
 
@@ -608,7 +661,8 @@ char *Statistique(Jeu jeu) {
     return res;
 }
 
-char *RecapRegle(Jeu jeu) {
+char *RecapRegle(Jeu jeu)
+{
 
     char *tmp = malloc(255 * sizeof(char));
 
@@ -627,11 +681,13 @@ char *RecapRegle(Jeu jeu) {
     return res;
 }
 
-char *AfficheNbTeteJoueurs(Jeu jeu) {
+char *AfficheNbTeteJoueurs(Jeu jeu)
+{
 
     char *tmp = malloc(45 * nb_Joueur * sizeof(char));
 
-    for (short i = 0; i < nb_Joueur; i++) {
+    for (short i = 0; i < nb_Joueur; i++)
+    {
         sprintf(tmp + strlen(tmp), BOLD_CYAN"Le joueur %d possède %d têtes \n"RESET, i, jeu.joueur[i]->NB_TETE);
         fprintf(fichier_log, "ROUND [%d] > Le joueur %d possède %d têtes\n", tour, i, jeu.joueur[i]->NB_TETE);
     }
@@ -643,30 +699,37 @@ char *AfficheNbTeteJoueurs(Jeu jeu) {
     return res;
 }
 
-void DistributionCarteAuJoueur(Jeu *jeu, short idJoueur) {
-    for (int i = 0; i < 10; i++) {
+void DistributionCarteAuJoueur(Jeu *jeu, short idJoueur)
+{
+    for (int i = 0; i < 10; i++)
+    {
         unsigned short rd = getCarteDeLaListe(jeu);
         jeu->listeCarte[rd].isPicked = 1;
         jeu->joueur[idJoueur]->carte[i] = jeu->listeCarte[rd];
     }
 }
 
-unsigned short getNbCarteUtilisableDuJoueur(Jeu jeu, short idJoueur) {
+unsigned short getNbCarteUtilisableDuJoueur(Jeu jeu, short idJoueur)
+{
     unsigned short cpt = 0;
     for (int i = 0; i < 10; i++) if (jeu.joueur[idJoueur]->carte[i].isUsed == 0) cpt++;
     return cpt;
 }
 
-char *MinEtMaxDefaite(Jeu jeu) {
+char *MinEtMaxDefaite(Jeu jeu)
+{
     unsigned short min = jeu.joueur[0]->NB_DEFAITE, max = jeu.joueur[0]->NB_DEFAITE;
     unsigned short imin = 0, imax = 0;
 
-    for (int i = 0; i < nb_Joueur; i++) {
-        if (jeu.joueur[i]->NB_DEFAITE < min) {
+    for (int i = 0; i < nb_Joueur; i++)
+    {
+        if (jeu.joueur[i]->NB_DEFAITE < min)
+        {
             min = jeu.joueur[i]->NB_DEFAITE;
             imin = i;
         }
-        if (jeu.joueur[i]->NB_DEFAITE > max) {
+        if (jeu.joueur[i]->NB_DEFAITE > max)
+        {
             max = jeu.joueur[i]->NB_DEFAITE;
             imax = i;
         }
@@ -691,13 +754,15 @@ char *MinEtMaxDefaite(Jeu jeu) {
     return res;
 }
 
-int MoyenneDesTetes(Jeu jeu) {
+int MoyenneDesTetes(Jeu jeu)
+{
     int somme = 0;
     for (int i = 0; i < nb_Joueur; i++) somme += jeu.joueur[i]->NB_TETE;
     return somme / nb_Joueur;
 }
 
-void ForceFinDuJeu() {
+void ForceFinDuJeu()
+{
     printf(RESET);
     isOver = 1;
     nextPartie = 1;
@@ -705,7 +770,5 @@ void ForceFinDuJeu() {
     fclose(fichier_log);
     exit(0);
 }
-
-
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_JEU_H

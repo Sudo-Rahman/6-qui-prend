@@ -46,5 +46,7 @@ void *joueur_pret(void *);
 
 int all_joueur_pret();
 
+void *listen_choix_carte_joueur(void *);
+
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H

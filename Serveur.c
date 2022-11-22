@@ -25,6 +25,7 @@ struct sockaddr_in serveur_addr = {0};
  */
 int main(int argc, char **argv)
 {
+
     if (argc == 2)
     {
         PORT = atoi(argv[1]);
@@ -68,20 +69,26 @@ int main(int argc, char **argv)
 
 
     Jeu jeu;
-    for(int i = 0; i< nb_client; i++){
+    for (int i = 0; i < nb_client; i++)
+    {
         jeu.joueur[i] = clients[i]->joueur;
     }
     initJeu(&jeu);
 
 
-
-    send_all_joueurs(clients, nb_client,RecapRegle(jeu));
-    send_all_joueurs(clients, nb_client,affichePlateau(jeu));
-
+    send_all_joueurs(clients, nb_client, RecapRegle(jeu));
+    send_all_joueurs(clients, nb_client, affichePlateau(jeu));
 
 
     while (1)
     {
+        pthread_t threads[nb_client];
+
+        for (int i = 0; i < nb_client; ++i)
+            pthread_create(&threads[i], NULL, listen_choix_carte_joueur, (void *) clients[i]);
+        for (int i = 0; i < nb_client; i++)
+            pthread_join(threads[i], NULL);
+
 
     }
 
@@ -98,7 +105,7 @@ int main(int argc, char **argv)
 void *joueur_pret(void *argv)
 {
     client *c = (client *) argv;
-    char *buffer = (char *) calloc(128, sizeof(char ));
+    char *buffer = (char *) calloc(128, sizeof(char));
     char message[1024];
 
     strcpy(message, "Envoyer 'pret' pour vous mettre pret.");
@@ -140,13 +147,14 @@ void *listen_joueurs()
 
         int client_socket = accept(serveur_socket, (struct sockaddr *) &serveur_addr, (socklen_t * ) & taille);
 
-        if(all_joueur_pret()){
+        if (all_joueur_pret())
+        {
             char mes[1024];
 
-            if(nb_client == MAX_JOUEURS)
-                strcpy(mes,"Le nombre de joueurs maximum a été atteint.");
+            if (nb_client == MAX_JOUEURS)
+                strcpy(mes, "Le nombre de joueurs maximum a été atteint.");
             else
-                strcpy(mes,"La partie à deja commencé.");
+                strcpy(mes, "La partie à deja commencé.");
 
             send(client_socket, mes, strlen(mes), 0);
 
@@ -158,8 +166,8 @@ void *listen_joueurs()
         client *c = init_joueur();
         c->socket = client_socket;
 
-        char *buffer = (char *) calloc(1024, sizeof(char ));
-        char *message = (char *) calloc(1024, sizeof(char ));
+        char *buffer = (char *) calloc(1024, sizeof(char));
+        char *message = (char *) calloc(1024, sizeof(char));
 
         if (recv(client_socket, buffer, sizeof(buffer) - 1, 0) < 0)
         {
@@ -223,11 +231,11 @@ void send_all_joueurs(client **clients, int nb_client, char *message)
  */
 client *init_joueur()
 {
-    client *c = (client *) malloc(sizeof (client));
+    client *c = (client *) malloc(sizeof(client));
     c->pseudo = (char *) calloc(128, sizeof(char));
     c->pret = 0;
-    c->bot_or_not =0;
-    c->joueur = (Joueur * ) malloc(sizeof (Joueur));
+    c->bot_or_not = 0;
+    c->joueur = (Joueur *) malloc(sizeof(Joueur));
     return c;
 }
 
@@ -253,3 +261,40 @@ int all_joueur_pret()
     }
     return 0;
 }
+
+
+void *listen_choix_carte_joueur(void *argv)
+{
+    client *c = (client *) argv;
+
+    char *buffer = (char *) calloc(128, sizeof(char));
+    char message[1024];
+
+    strcpy(message, "Choisissez une carte parmi celles que vous avez.");
+
+    send(c->socket, message, strlen(message), 0);
+
+    strcpy(message, affiche_joueur_cartes(c->joueur));
+    send(c->socket, message, strlen(message), 0);
+
+    while (1)
+    {
+        recv(c->socket, buffer, sizeof(buffer) - 1, 0);
+        int nb = atoi(buffer);
+        if (nb == 0 || (nb > 10 || nb < 1))
+        {
+            strcpy(message, "Erreur la carte indiquée n’existe pas.");
+            send(c->socket, message, strlen(message), 0);
+            continue;
+        } else
+        {
+            if (c->joueur->carte[nb - 1].isUsed != 1)
+            {
+                c->joueur->carte[nb - 1].isUsed = 1;
+                break;
+            }
+        }
+    }
+    free(buffer);
+}
+
