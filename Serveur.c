@@ -3,6 +3,8 @@
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
+
 
 #include "Serveur.h"
 
@@ -25,6 +27,7 @@ struct sockaddr_in serveur_addr = {0};
  */
 int main(int argc, char **argv)
 {
+    srand(time(NULL));
 
     if (argc == 2)
     {
@@ -89,6 +92,12 @@ int main(int argc, char **argv)
         for (int i = 0; i < nb_client; i++)
             pthread_join(threads[i], NULL);
 
+        for (int i = 0; i < nb_client; ++i){
+            if(!ajoute_carte_au_plateau(&jeu, clients[i]->joueur->carte_choisie)){
+                printf("joueur : %s ", clients[i]->pseudo);
+            }
+        }
+        send_all_joueurs(clients, nb_client, affichePlateau(jeu));
 
     }
 
@@ -270,7 +279,7 @@ void *listen_choix_carte_joueur(void *argv)
     char *buffer = (char *) calloc(128, sizeof(char));
     char message[1024];
 
-    strcpy(message, "Choisissez une carte parmi celles que vous avez.");
+    strcpy(message, "Choisissez une carte parmi celles que vous avez.\n");
 
     send(c->socket, message, strlen(message), 0);
 
@@ -288,9 +297,14 @@ void *listen_choix_carte_joueur(void *argv)
             continue;
         } else
         {
-            if (c->joueur->carte[nb - 1].isUsed != 1)
+            if (c->joueur->carte[nb - 1].isUsed == 1)
             {
+                strcpy(message, "Cette carte a deja été utilisé choisissez en une autre.");
+                send(c->socket, message, strlen(message), 0);
+            }
+            else{
                 c->joueur->carte[nb - 1].isUsed = 1;
+                c->joueur->carte_choisie = &c->joueur->carte[nb - 1];
                 break;
             }
         }
