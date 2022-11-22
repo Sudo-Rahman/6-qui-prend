@@ -7,7 +7,9 @@
 #include "Serveur.h"
 
 
-joueur *joueurs[8];
+client *clients[MAX_JOUEURS];
+
+int nb_client = 0;
 
 
 int serveur_socket;
@@ -61,26 +63,28 @@ int main(int argc, char **argv)
     while (all_joueur_pret() == 0)
     {}
 
-    send_all_joueurs(joueurs, nb_Joueur, "Tous les joueurs sont pret la partie va commencer.");
+    send_all_joueurs(clients, nb_client, "Tous les joueurs sont pret la partie va commencer.");
     printf("La partie commence.\n");
 
-    printf("ici\n");
 
     Jeu jeu;
-    printf("ici\n");
+    for(int i = 0; i< nb_client; i++){
+        jeu.joueur[i] = clients[i]->joueur;
+    }
+    initJeu(&jeu);
 
-    initJeu(jeu);
-    printf("ici\n");
 
 
-    send_all_joueurs(joueurs, nb_Joueur,affichePlateau(jeu));
-    printf("ici\n");
+    send_all_joueurs(clients, nb_client,RecapRegle(jeu));
+    send_all_joueurs(clients, nb_client,affichePlateau(jeu));
+
 
 
     while (1)
     {
 
     }
+
 
     return EXIT_SUCCESS;
 }
@@ -93,24 +97,24 @@ int main(int argc, char **argv)
  */
 void *joueur_pret(void *argv)
 {
-    joueur *j = (joueur *) argv;
-    char *buffer = (char *) calloc(128, sizeof(char *));
+    client *c = (client *) argv;
+    char *buffer = (char *) calloc(128, sizeof(char ));
     char message[1024];
 
     strcpy(message, "Envoyer 'pret' pour vous mettre pret.");
 
-    send(j->socket, message, strlen(message), 0);
+    send(c->socket, message, strlen(message), 0);
 
     while (1)
     {
-        recv(j->socket, buffer, sizeof(buffer) - 1, 0);
+        recv(c->socket, buffer, sizeof(buffer) - 1, 0);
         if (strcmp(buffer, "pret") == 0)
         {
-            j->pret = 1;
+            c->pret = 1;
             strcpy(message, "Le joueur ");
-            strcat(message, j->pseudo);
+            strcat(message, c->pseudo);
             strcat(message, " à mis pret");
-            send_all_joueurs(joueurs, nb_Joueur, message);
+            send_all_joueurs(clients, nb_client, message);
             break;
         }
     }
@@ -134,58 +138,59 @@ void *listen_joueurs()
 
         int taille = (int) sizeof(serveur_addr);
 
-        int client = accept(serveur_socket, (struct sockaddr *) &serveur_addr, (socklen_t * ) & taille);
+        int client_socket = accept(serveur_socket, (struct sockaddr *) &serveur_addr, (socklen_t * ) & taille);
 
         if(all_joueur_pret()){
             char mes[1024];
 
-            if(nb_Joueur == MAX_JOUEURS)
+            if(nb_client == MAX_JOUEURS)
                 strcpy(mes,"Le nombre de joueurs maximum a été atteint.");
             else
                 strcpy(mes,"La partie à deja commencé.");
 
-            send(client, mes, strlen(mes), 0);
+            send(client_socket, mes, strlen(mes), 0);
 
 
-            close(client);
+            close(client_socket);
             continue;
         }
 
-        joueur *j = init_joueur();
-        j->socket = client;
+        client *c = init_joueur();
+        c->socket = client_socket;
 
-        char *buffer = (char *) calloc(1024, sizeof(char *));
-        char *message = (char *) calloc(1024, sizeof(char *));
+        char *buffer = (char *) calloc(1024, sizeof(char ));
+        char *message = (char *) calloc(1024, sizeof(char ));
 
-        if (recv(client, buffer, sizeof(buffer) - 1, 0) < 0)
+        if (recv(client_socket, buffer, sizeof(buffer) - 1, 0) < 0)
         {
             perror("bug reception");
             exit(-1);
         }
-        strcpy(j->pseudo, buffer);
+        strcpy(c->pseudo, buffer);
 
-        printf("Connection réaliser avec le joueur %s\n", j->pseudo);
+        printf("Connection réaliser avec le joueur %s\n", c->pseudo);
         strcpy(message, "Vous avez rejoint le serveur, vous etes le joueur n°");
         char nb[8];
-        sprintf(nb, "%i", nb_Joueur + 1);
+        sprintf(nb, "%i", nb_client + 1);
         strcat(message, nb);
         strcat(message, ".");
-        send(client, message, strlen(message), 0);
+        send(client_socket, message, strlen(message), 0);
 
         strcpy(message, "Le joueur ");
-        strcat(message, j->pseudo);
+        strcat(message, c->pseudo);
         strcat(message, " vient de se connecter");
 
-        send_all_joueurs(joueurs, nb_Joueur, message);
+        send_all_joueurs(clients, nb_client, message);
 
-        joueurs[nb_Joueur] = j;
+        clients[nb_client] = c;
 
 
+        nb_client++;
         nb_Joueur++;
 
-        if (nb_Joueur == MAX_JOUEURS)
+        if (nb_client == MAX_JOUEURS)
         {
-            send_all_joueurs(joueurs, nb_Joueur, "nombre max de joueur atteint la partie va commencer.");
+            send_all_joueurs(clients, nb_client, "nombre max de joueur atteint la partie va commencer.");
             break;
         }
 
@@ -195,7 +200,7 @@ void *listen_joueurs()
 
         pthread_t pthread;
 
-        pthread_create(&pthread, NULL, &joueur_pret, (void *) j);
+        pthread_create(&pthread, NULL, &joueur_pret, (void *) c);
     }
 
 }
@@ -206,23 +211,24 @@ void *listen_joueurs()
  * @param nb_joueur
  * @param message
  */
-void send_all_joueurs(joueur **joueurs, int nb_joueur, char *message)
+void send_all_joueurs(client **clients, int nb_client, char *message)
 {
-    for (int i = 0; i < nb_joueur; ++i)
-        send(joueurs[i]->socket, message, strlen(message), 0);
+    for (int i = 0; i < nb_client; ++i)
+        send(clients[i]->socket, message, strlen(message), 0);
 }
 
 /**
- * @brief Fonction qui creé un nouveau pointeur de joueur et le renvoie.
- * @return joueur
+ * @brief Fonction qui creé un nouveau pointeur de client et le renvoie.
+ * @return client
  */
-joueur *init_joueur()
+client *init_joueur()
 {
-    joueur *j = (joueur *) malloc(1);
-    j->pseudo = (char *) calloc(128, sizeof(char *));
-    j->pret = 0;
-
-    return j;
+    client *c = (client *) malloc(sizeof (client));
+    c->pseudo = (char *) calloc(128, sizeof(char));
+    c->pret = 0;
+    c->bot_or_not =0;
+    c->joueur = (Joueur * ) malloc(sizeof (Joueur));
+    return c;
 }
 
 /**
@@ -231,15 +237,19 @@ joueur *init_joueur()
  */
 int all_joueur_pret()
 {
-    if (nb_Joueur == 0)
+    if (nb_client == 0)
         return 0;
     int compteur = 0;
-    for (int i = 0; i < nb_Joueur; i++)
+    for (int i = 0; i < nb_client; i++)
     {
-        if (joueurs[i]->pret == 1)
+        if (clients[i]->pret == 1)
             compteur++;
     }
-    if (compteur == nb_Joueur)
+    if (compteur == nb_client)
+    {
         return 1;
+        if (compteur >= MIN_JOUEURS)
+            return 1;
+    }
     return 0;
 }

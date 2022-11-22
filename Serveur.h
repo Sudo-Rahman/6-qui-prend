@@ -20,7 +20,6 @@
 
 
 int PORT = 65534;
-#define MAX_JOUEURS 8
 
 #define BUF_SIZE 1024
 
@@ -32,14 +31,16 @@ typedef struct
     int numero_joueur;
     int socket;
     int pret ;
+    Joueur *joueur;
+    int bot_or_not;
 
-} joueur;
+} client;
 
-joueur *init_joueur();
+client *init_joueur();
 
 void *listen_joueurs();
 
-void send_all_joueurs(joueur **joueurs , int nb_joueur, char *message);
+void send_all_joueurs(client **clients , int nb_clients, char *message);
 
 void *joueur_pret(void *);
 
