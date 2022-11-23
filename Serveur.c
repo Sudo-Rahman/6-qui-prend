@@ -150,11 +150,8 @@ void jeu_play(Jeu *jeu){
                             c = clients[j];
 
                     }
-                    printf("ici\n");
                     int ligne = carte_trop_petite(c);
-                    printf("ici\n");
                     place_carte_mini(jeu,ligne,c->joueur);
-                    printf("%u\n",clients[0]->joueur->nb_penalite);
                 }
             }
         }
@@ -299,7 +296,7 @@ void *listen_choix_carte_joueur(void *argv)
 
     send(c->socket, message, strlen(message), 0);
 
-    strcpy(message, affiche_joueur_cartes(c->joueur));
+    strcpy(message, affiche_cartes_joueur(c->joueur));
     send(c->socket, message, strlen(message), 0);
 
     while (1)
@@ -352,7 +349,7 @@ void client_quit(client *c)
 }
 
 /**
- * @details Ferme le socket de tous les clients.
+ * @details Ferme le socket de tous les clients et du serveur.
  */
 void close_all_clients()
 {
@@ -364,6 +361,11 @@ void close_all_clients()
 }
 
 
+/**
+ * @details Fonction qui écoute le client en parametre et retourne les données envoyer par le client.
+ * @param c
+ * @return chaine de caractere.
+ */
 char *recv_client_data(client *c)
 {
     char *buffer = (char *) calloc(1024, sizeof(char *));
@@ -375,6 +377,11 @@ char *recv_client_data(client *c)
     return buffer;
 }
 
+/**
+ * @details Quand un joueur joue une carte qui est trop petite.
+ * @param c
+ * @return ligne choisie par le client.
+ */
 int carte_trop_petite(client *c)
 {
 
@@ -382,18 +389,16 @@ int carte_trop_petite(client *c)
                     " ou la mettre\nsuite a cela vous aurez la somme des tetes des cartes de la ligne en pénalité.";
 
     send(c->socket, message, strlen(message),0);
-    int nb;
-   do{
+    int nb = 10;
+    while (nb <1 || nb >4){
        char *buff = recv_client_data(c);
        nb = atoi(buff);
-       printf("%i\n",nb);
 
-       if(nb >0 && nb <5){
+       if(nb <1 || nb >4){
            strcpy(message, "Ligne incorrecte, refaite la saisie.");
            send(c->socket, message, strlen(message),0);
        }
        free(buff);
-       printf("%i\n",nb);
-   } while (nb >0 && nb <5);
+   }
     return nb-1;
 }

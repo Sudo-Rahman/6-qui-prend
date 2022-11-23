@@ -247,29 +247,18 @@ void creation_premiere_colonne_plateau(Jeu *jeu);
 /**
  * @details Renvoie un tableau de joueurs classé par leur carte jouer en ordre croissant.
  * @param jeu
- * @return
+ * @return Joueur
  */
 Joueur **get_ordre_joueur_tour(Jeu *jeu);
 
-void place_carte_mini(Jeu *jeu, int ligne, Joueur *j)
-{
-    int penalite = 0;
-    for (int i = 0; i < 6; ++i)
-    {
-        if (jeu->plateau[ligne][i].Numero == 0)
-            break;
-        penalite += jeu->plateau[ligne][i].Tete;
-    }
-    for (int i = 0; i < 6; ++i)
-    {
-        if (jeu->plateau[ligne][i].Numero == 0)
-            break;
-        Carte c = {0, 0, 0, 0};
-        jeu->plateau[ligne][i] = c;
-    }
-    jeu->plateau[ligne][0] = *j->carte_choisie;
-    j->nb_penalite += penalite;
-}
+/**
+ * @details Supprime toutes les cartes de la ligne en parametre, ajoute la carte a la premiere
+ * colonne de la ligne en parametre, et ajoute les pénalités de la ligne au joueur en parametre.
+ * @param jeu
+ * @param ligne
+ * @param j
+ */
+void place_carte_mini(Jeu *jeu, int ligne, Joueur *j);
 
 
 void initJeu(Jeu *jeu)
@@ -411,6 +400,29 @@ char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte)
         return 1;
     }
 }
+
+
+void place_carte_mini(Jeu *jeu, int ligne, Joueur *j)
+{
+    int penalite = 0;
+    for (int i = 0; i < 6; ++i)
+    {
+        if (jeu->plateau[ligne][i].Numero == 0)
+            break;
+        penalite += jeu->plateau[ligne][i].Tete;
+    }
+    for (int i = 0; i < 6; ++i)
+    {
+        if (jeu->plateau[ligne][i].Numero == 0)
+            break;
+        Carte c = {0, 0, 0, 0};
+        jeu->plateau[ligne][i] = c;
+    }
+    jeu->plateau[ligne][0] = *j->carte_choisie;
+    j->nb_penalite += penalite;
+}
+
+
 
 char get_pos_carte_mini(Jeu *jeu, int numero)
 {
