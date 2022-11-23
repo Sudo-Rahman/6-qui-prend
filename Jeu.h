@@ -199,7 +199,7 @@ unsigned short getCartePlusPetiteDuPlateau(Jeu jeu);
  * @param joueur
  * @return La liste des cartes du Joueur joueur.
  */
-char *affiche_joueur_cartes(Joueur *joueur);
+char *affiche_cartes_joueur(Joueur *joueur);
 
 
 /**
@@ -225,7 +225,7 @@ unsigned char get_pos_carte_derniere_ligne(Jeu *jeu, int ligne);
  * @param numero
  * @return unsigned char
  */
-unsigned char get_pos_carte_mini(Jeu *jeu, int numero);
+char get_pos_carte_mini(Jeu *jeu, int numero);
 
 
 /**
@@ -253,21 +253,22 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu);
 
 void place_carte_mini(Jeu *jeu, int ligne, Joueur *j)
 {
-    int prenalite = 0;
+    int penalite = 0;
     for (int i = 0; i < 6; ++i)
     {
         if (jeu->plateau[ligne][i].Numero == 0)
             break;
-        prenalite += jeu->plateau[ligne][i].Tete;
+        penalite += jeu->plateau[ligne][i].Tete;
     }
     for (int i = 0; i < 6; ++i)
     {
         if (jeu->plateau[ligne][i].Numero == 0)
             break;
-        Carte c = {0, rand() % 7 + 1, 0, 0};
+        Carte c = {0, 0, 0, 0};
         jeu->plateau[ligne][i] = c;
     }
     jeu->plateau[ligne][0] = *j->carte_choisie;
+    j->nb_penalite += penalite;
 }
 
 
@@ -399,7 +400,7 @@ unsigned char get_pos_carte_derniere_ligne(Jeu *jeu, int ligne)
 char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte)
 {
     char pos = get_pos_carte_mini(jeu, carte->Numero);
-    if (pos == 0)
+    if (pos == -1)
         return -1;
     if (pos % 6 == 4)
     {
@@ -411,10 +412,10 @@ char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte)
     }
 }
 
-unsigned char get_pos_carte_mini(Jeu *jeu, int numero)
+char get_pos_carte_mini(Jeu *jeu, int numero)
 {
-    unsigned short diff = numero - get_dernier_carte_ligne(jeu, 0);
-    char pos = 0;
+    short diff = numero - get_dernier_carte_ligne(jeu, 0);
+    char pos = -1;
     if (diff > 0)
         pos = get_pos_carte_derniere_ligne(jeu, 0);
     for (int i = 1; i < 4; ++i)
@@ -501,19 +502,16 @@ Carte *get_carte_liste(Jeu *jeu)
     return c;
 }
 
-char *affiche_joueur_cartes(Joueur *joueur)
+char *affiche_cartes_joueur(Joueur *joueur)
 {
-    char *tmp = malloc(1024 * sizeof(char));
+    char *res = malloc(1024 * sizeof(char));
 
     for (int i = 0; i < 10; i++)
     {
         if (joueur->carte[i]->isUsed == 0)
-            sprintf(tmp + strlen(tmp), "Carte %02d > Numéro[%03d] Tete[%d]\n", i + 1, joueur->carte[i]->Numero,
+            sprintf(res + strlen(res), "Carte %02d > Numéro[%03d] Tete[%d]\n", i + 1, joueur->carte[i]->Numero,
                     joueur->carte[i]->Tete);
     }
-    char *res = malloc(strlen(tmp) * sizeof(char));
-    strcpy(res, tmp);
-    free(tmp);
     return res;
 }
 
