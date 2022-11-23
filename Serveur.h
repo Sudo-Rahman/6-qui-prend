@@ -54,6 +54,10 @@ void close_all_clients();
 
 char *recv_client_data(client *c);
 
+int carte_trop_petite(client *c);
+
+void jeu_play(Jeu *jeu);
+
 
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H
