@@ -24,7 +24,7 @@ typedef struct Carte
 typedef struct Joueur
 {
     unsigned short NB_TETE, NB_DEFAITE;
-    Carte carte[10];
+    Carte *carte[10];
     Carte *carte_choisie;
 } Joueur;
 
@@ -33,7 +33,7 @@ typedef struct Jeu
 {
     Carte **plateau;
     Joueur *joueur[MAX_JOUEURS];
-    Carte listeCarte[104];
+    Carte *listeCarte[104];
 } Jeu;
 
 unsigned int isOver = 0, tour = 1, nb_Joueur = 0, nb_Partie = 0, nb_TeteMax = 10, nb_MancheMax = 900;
@@ -72,16 +72,12 @@ char *affichePlateau(Jeu jeu);
 void freeJeu(Jeu jeu);
 
 
-
-
 /**
  * @details Fonction qui permet d'afficher les règles du jeu à l'écran quand le jeu démarre
  * @param jeu
  * @return char*
  */
 char *RecapRegle(Jeu jeu);
-
-
 
 
 /**
@@ -130,28 +126,28 @@ void ForceFinDuJeu();
  * @param i
  * @return Carte
  */
-Carte CreateCarte(unsigned short i);
+Carte *CreateCarte(unsigned short i);
 
 /**
- * @details Fonction qui retourne le numéro d'une carte de la liste non utilisé
+ * @details Fonction qui retourne une carte de la liste non utilisé et distribué.
  * @param jeu
- * @return int
+ * @return carte
  */
-int getCarteDeLaListe(Jeu *jeu);
+Carte *get_carte_liste(Jeu *jeu);
 
 
 /**
- * @details Fonction qui distribue 10 des cartes aux joueurs
+ * @details Fonction qui distribue les cartes aux joueurs.
  * @param jeu
  */
-void DistributionCarteAuxJoueurs(Jeu *jeu);
+void distribution_carte_joueurs(Jeu *jeu);
 
 /**
- * @details Fonction qui distribue 10 à un joueur
+ * @details Fonction qui distribue les cartes du joueur en parametre.
  * @param jeu
- * @param idJoueur
+ * @param j
  */
-void DistributionCarteAuJoueur(Jeu *jeu, short idJoueur);
+void distribution_carte_joueur(Jeu *jeu, Joueur *j);
 
 /**
  * @details Fonction qui donne la position de la ligne où sera la dernière carte
@@ -242,6 +238,19 @@ unsigned char get_pos_carte_mini(Jeu *jeu, int numero);
 char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte);
 
 
+/**
+ * @details Remplie la premiere colonne du plateau par des cartes au hasard.
+ * @param jeu
+ */
+void creation_premiere_colonne_plateau(Jeu *jeu);
+
+/**
+ * @details Renvoie un tableau de joueurs classé par leur carte jouer en ordre croissant.
+ * @param jeu
+ * @return
+ */
+Joueur **get_ordre_joueur_tour(Jeu *jeu);
+
 
 
 void initJeu(Jeu *jeu)
@@ -262,14 +271,9 @@ void initJeu(Jeu *jeu)
     Carte carte_0 = {0, 0, 0, 0};
     for (int i = 0; i < 4; i++) for (int j = 0; j < 6; j++) jeu->plateau[i][j] = carte_0;
 
-    //Carte de la premiere ligne du plateau distribué
-    for (int i = 0; i < 4; i++)
-    {
-        int rd = getCarteDeLaListe(jeu);
-        jeu->listeCarte[rd].isPicked = 1;
-        jeu->plateau[i][0] = jeu->listeCarte[rd];
-    }
-    DistributionCarteAuxJoueurs(jeu);
+    //Carte de la premiere colonne du plateau distribué
+    creation_premiere_colonne_plateau(jeu);
+    distribution_carte_joueurs(jeu);
 }
 
 
@@ -291,6 +295,57 @@ Carte **creePlateau()
     Carte **plateau = (Carte **) malloc(6 * sizeof(Carte *));
     for (int i = 0; i < 6; i++) plateau[i] = (Carte *) malloc(6 * sizeof(Carte));
     return plateau;
+}
+
+
+void creation_premiere_colonne_plateau(Jeu *jeu){
+
+    Carte *cartes[4];
+
+    for (int i = 0; i < 4; ++i)
+        cartes[i] = get_carte_liste(jeu);
+
+
+    for (int j = 1; j <= 4; j++)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            if (cartes[i]->Numero > cartes[i+1]->Numero)
+            {
+                Carte *c = cartes[i];
+                cartes[i] = cartes[i + 1];
+                cartes[i+1] = c;
+            }
+        }
+    }
+
+    for (int i = 0; i < 4; i++)
+        jeu->plateau[i][0] = *cartes[i];
+
+
+}
+
+Joueur **get_ordre_joueur_tour(Jeu *jeu)
+{
+    Joueur **joueurs = (Joueur **) malloc(nb_Joueur * sizeof(Joueur*));
+
+    for (int i = 0; i < nb_Joueur; ++i)
+        joueurs[i] = jeu->joueur[i];
+
+    for (int j = 1; j <= nb_Joueur; j++)
+    {
+        for (int i = 0; i < nb_Joueur - 1; i++)
+        {
+            if (joueurs[i]->carte_choisie->Numero > joueurs[i + 1]->carte_choisie->Numero)
+            {
+                Joueur *jo = joueurs[i];
+                joueurs[i] = joueurs[i + 1];
+                joueurs[i + 1] = jo;
+            }
+        }
+    }
+
+    return joueurs;
 }
 
 char *affichePlateau(Jeu jeu)
@@ -396,37 +451,31 @@ void PrintTableau(Jeu jeu)
     fprintf(fichier_log, "\n");
 }
 
-Carte CreateCarte(unsigned short i)
+Carte *CreateCarte(unsigned short i)
 {
-    Carte c = {i, (rand() % 7) + 1, 0, 0};
+    Carte *c = (Carte *) malloc(sizeof (Carte));
+    c->Numero = i;
+    c->isPicked = 0;
+    c->isUsed = 0;
+    c->Tete = (rand() % 7) + 1;
     return c;
 }
 
-int getCarteDeLaListe(Jeu *jeu)
+Carte *get_carte_liste(Jeu *jeu)
 {
-    int tmp[104];
+    Carte *tmp[104];
     int cpt = 0;
     //Parcours de la liste pour trouver les cartes pas encore prise
     for (int i = 0; i < 104; i++)
     {
-        if (jeu->listeCarte[i].isPicked == 0)
+        if (jeu->listeCarte[i]->isPicked == 0)
         {
-            tmp[cpt] = jeu->listeCarte[i].Numero;
+            tmp[cpt] = jeu->listeCarte[i];
             cpt++;
         }
     }
 
-    //Si le nombre de cartes restantes est supérieur à 0, on va tirer une carte aléatoire de notre tableau, sinon on ne retourne pas de valeur de carte.
-    if (cpt > 0)
-    {
-        int tirage[cpt];
-        for (int i = 0; i < cpt; i++) tirage[i] = tmp[i];
-        return tirage[rand() % cpt];
-    } else
-    {
-        printf(BOLD_RED"PLUS DE CARTE DANS LE PAQUET\n"RESET);
-        return 999;
-    }
+    return tmp[rand()%cpt];
 }
 
 char *affiche_joueur_cartes(Joueur *joueur)
@@ -435,9 +484,9 @@ char *affiche_joueur_cartes(Joueur *joueur)
 
     for (int i = 0; i < 10; i++)
     {
-        if (joueur->carte[i].isUsed == 0)
-            sprintf(tmp + strlen(tmp), "Carte %d > Numéro[%d] Tete[%d]\n", i + 1, joueur->carte[i].Numero,
-                    joueur->carte[i].Tete);
+        if (joueur->carte[i]->isUsed == 0)
+            sprintf(tmp + strlen(tmp), "Carte %d > Numéro[%d] Tete[%d]\n", i + 1, joueur->carte[i]->Numero,
+                    joueur->carte[i]->Tete);
     }
     char *res = malloc(strlen(tmp) * sizeof(char));
     strcpy(res, tmp);
@@ -448,27 +497,14 @@ char *affiche_joueur_cartes(Joueur *joueur)
 unsigned short getCarteRestante(Jeu jeu)
 {
     unsigned short cpt = 0;
-    for (int i = 0; i < 104; i++) if (jeu.listeCarte[i].isPicked == 0) cpt++;
+    for (int i = 0; i < 104; i++) if (jeu.listeCarte[i]->isPicked == 0) cpt++;
     return cpt;
 }
 
-void DistributionCarteAuxJoueurs(Jeu *jeu)
+void distribution_carte_joueurs(Jeu *jeu)
 {
     for (int i = 0; i < nb_Joueur; i++)
-    {
-        for (int j = 0; j < 10; j++)
-        {
-            while (1)
-            {
-                unsigned short rd = getCarteDeLaListe(jeu);
-                if(jeu->listeCarte[rd].isPicked != 1){
-                    jeu->listeCarte[rd].isPicked = 1;
-                    jeu->joueur[i]->carte[j] = jeu->listeCarte[rd];
-                    break;
-                }
-            }
-        }
-    }
+        distribution_carte_joueur(jeu, jeu->joueur[i]);
 }
 
 unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte)
@@ -578,20 +614,27 @@ char *AfficheNbTeteJoueurs(Jeu jeu)
     return res;
 }
 
-void DistributionCarteAuJoueur(Jeu *jeu, short idJoueur)
+void distribution_carte_joueur(Jeu *jeu, Joueur *j)
 {
     for (int i = 0; i < 10; i++)
     {
-        unsigned short rd = getCarteDeLaListe(jeu);
-        jeu->listeCarte[rd].isPicked = 1;
-        jeu->joueur[idJoueur]->carte[i] = jeu->listeCarte[rd];
+        while (1)
+        {
+            Carte *c= get_carte_liste(jeu);
+            if (c->isPicked != 1)
+            {
+                c->isPicked = 1;
+                j->carte[i] = c;
+                break;
+            }
+        }
     }
 }
 
 unsigned short getNbCarteUtilisableDuJoueur(Jeu jeu, short idJoueur)
 {
     unsigned short cpt = 0;
-    for (int i = 0; i < 10; i++) if (jeu.joueur[idJoueur]->carte[i].isUsed == 0) cpt++;
+    for (int i = 0; i < 10; i++) if (jeu.joueur[idJoueur]->carte[i]->isUsed == 0) cpt++;
     return cpt;
 }
 
@@ -652,5 +695,6 @@ void ForceFinDuJeu()
     fclose(fichier_log);
     exit(0);
 }
+
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_JEU_H

@@ -92,14 +92,22 @@ int main(int argc, char **argv)
         for (int i = 0; i < nb_client; i++)
             pthread_join(threads[i], NULL);
 
+        Joueur **joueurs = get_ordre_joueur_tour(&jeu);
         for (int i = 0; i < nb_client; ++i)
         {
-            if (!ajoute_carte_au_plateau(&jeu, clients[i]->joueur->carte_choisie))
+            int retour = ajoute_carte_au_plateau(&jeu, joueurs[i]->carte_choisie);
+            if (retour ==0)
             {
                 printf("joueur : %s ", clients[i]->pseudo);
+            }else{
+                if(retour == -1){
+                    printf("joueur : %s ", clients[i]->pseudo);
+
+                }
             }
         }
         send_all_joueurs(clients, nb_client, affichePlateau(jeu));
+        free(joueurs);
 
     }
 
@@ -290,14 +298,14 @@ void *listen_choix_carte_joueur(void *argv)
             continue;
         } else
         {
-            if (c->joueur->carte[nb - 1].isUsed == 1)
+            if (c->joueur->carte[nb - 1]->isUsed == 1)
             {
                 strcpy(message, "Cette carte a deja été utilisé choisissez en une autre.");
                 send(c->socket, message, strlen(message), 0);
             } else
             {
-                c->joueur->carte[nb - 1].isUsed = 1;
-                c->joueur->carte_choisie = &c->joueur->carte[nb - 1];
+                c->joueur->carte[nb - 1]->isUsed = 1;
+                c->joueur->carte_choisie = c->joueur->carte[nb - 1];
                 break;
             }
         }
