@@ -63,7 +63,7 @@ Carte **creePlateau();
  * @param jeu
  * @return char*
  */
-char *affichePlateau(Jeu jeu);
+char *affiche_plateau(Jeu *jeu);
 
 /**
  * @details Fonction pour libérer de la mémoire la matrice de carte
@@ -367,17 +367,18 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu)
     return joueurs;
 }
 
-char *affichePlateau(Jeu jeu)
+char *affiche_plateau(Jeu *jeu)
 {
     char *res = (char *) malloc(1024 * sizeof(char));
 
-    sprintf(res, BOLD_HIGH_WHITE"\t\t\t\t\t\t\t\tPLATEAU:\n"RESET);
+    sprintf(res, BOLD_HIGH_WHITE"\t\t\t\t\t\tPLATEAU:\n"RESET);
 
     for (int i = 0; i < 4; i++)
     {
+        sprintf(res + strlen(res), "Ligne %u\t", i+1);
         for (int j = 0; j < 6; j++)
-            sprintf(res + strlen(res), BOLD_HIGH_WHITE"\t[%d-%d]\t"RESET, jeu.plateau[i][j].Numero,
-                    jeu.plateau[i][j].Tete);
+            sprintf(res + strlen(res), BOLD_HIGH_WHITE"\t[%03d-%d]\t"RESET ,jeu->plateau[i][j].Numero,
+                    jeu->plateau[i][j].Tete);
         sprintf(res + strlen(res), "\n");
     }
     return res;
@@ -464,7 +465,7 @@ void PrintTableau(Jeu jeu)
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 6; j++)
-            fprintf(fichier_log, "\t[%d-%d]\t", jeu.plateau[i][j].Numero, jeu.plateau[i][j].Tete);
+            fprintf(fichier_log, "\t[%03d-%d]\t", jeu.plateau[i][j].Numero, jeu.plateau[i][j].Tete);
         fprintf(fichier_log, "\n");
     }
     fprintf(fichier_log, "\n");
@@ -507,7 +508,7 @@ char *affiche_joueur_cartes(Joueur *joueur)
     for (int i = 0; i < 10; i++)
     {
         if (joueur->carte[i]->isUsed == 0)
-            sprintf(tmp + strlen(tmp), "Carte %d > Numéro[%d] Tete[%d]\n", i + 1, joueur->carte[i]->Numero,
+            sprintf(tmp + strlen(tmp), "Carte %02d > Numéro[%03d] Tete[%d]\n", i + 1, joueur->carte[i]->Numero,
                     joueur->carte[i]->Tete);
     }
     char *res = malloc(strlen(tmp) * sizeof(char));
