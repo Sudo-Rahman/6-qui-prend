@@ -48,11 +48,11 @@ int all_joueur_pret();
 
 void *listen_choix_carte_joueur(void *);
 
-void *listen_client_quit(void *);
-
-void listen_clients_quit();
+void client_quit(client *c);
 
 void close_all_clients();
+
+char *recv_client_data(client *c);
 
 
 

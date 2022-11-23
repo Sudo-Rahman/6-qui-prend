@@ -70,8 +70,6 @@ int main(int argc, char **argv)
     send_all_joueurs(clients, nb_client, "Tous les joueurs sont pret la partie va commencer.");
     printf("La partie commence.\n");
 
-    listen_clients_quit();
-
 
     Jeu jeu;
     for (int i = 0; i < nb_client; i++)
@@ -94,8 +92,10 @@ int main(int argc, char **argv)
         for (int i = 0; i < nb_client; i++)
             pthread_join(threads[i], NULL);
 
-        for (int i = 0; i < nb_client; ++i){
-            if(!ajoute_carte_au_plateau(&jeu, clients[i]->joueur->carte_choisie)){
+        for (int i = 0; i < nb_client; ++i)
+        {
+            if (!ajoute_carte_au_plateau(&jeu, clients[i]->joueur->carte_choisie))
+            {
                 printf("joueur : %s ", clients[i]->pseudo);
             }
         }
@@ -116,8 +116,7 @@ int main(int argc, char **argv)
 void *joueur_pret(void *argv)
 {
     client *c = (client *) argv;
-    char *buffer = (char *) calloc(128, sizeof(char));
-    char message[1024];
+    char *message = (char *) malloc(1024 * sizeof(char));
 
     strcpy(message, "Envoyer 'pret' pour vous mettre pret.");
 
@@ -125,18 +124,17 @@ void *joueur_pret(void *argv)
 
     while (1)
     {
-        recv(c->socket, buffer, sizeof(buffer) - 1, 0);
+        char *buffer = recv_client_data(c);
         if (strcmp(buffer, "pret") == 0)
         {
             c->pret = 1;
-            strcpy(message, "Le joueur ");
-            strcat(message, c->pseudo);
-            strcat(message, " à mis pret");
+            sprintf(message, "Le joueur : %s à mis pret.", c->pseudo);
             send_all_joueurs(clients, nb_client, message);
             break;
         }
+        free(buffer);
     }
-    free(buffer);
+    free(message);
 
     return 0;
 }
@@ -177,28 +175,16 @@ void *listen_joueurs()
         client *c = init_joueur();
         c->socket = client_socket;
 
-        char *buffer = (char *) calloc(1024, sizeof(char));
         char *message = (char *) calloc(1024, sizeof(char));
+        char *buffer = recv_client_data(c);
 
-        if (recv(client_socket, buffer, sizeof(buffer) - 1, 0) < 0)
-        {
-            perror("bug reception");
-            exit(-1);
-        }
         strcpy(c->pseudo, buffer);
 
         printf("Connection réaliser avec le joueur %s\n", c->pseudo);
-        strcpy(message, "Vous avez rejoint le serveur, vous etes le joueur n°");
-        char nb[8];
-        sprintf(nb, "%i", nb_client + 1);
-        strcat(message, nb);
-        strcat(message, ".");
+        sprintf(message, "Vous avez rejoint le serveur, vous etes le joueur n°%u.", nb_client + 1);
         send(client_socket, message, strlen(message), 0);
 
-        strcpy(message, "Le joueur ");
-        strcat(message, c->pseudo);
-        strcat(message, " vient de se connecter");
-
+        sprintf(message, "Le joueur : %s vient de se connecter.", c->pseudo);
         send_all_joueurs(clients, nb_client, message);
 
         clients[nb_client] = c;
@@ -274,12 +260,16 @@ int all_joueur_pret()
 }
 
 
+/**
+ * @details Ecoute le joueur, pour récuperer la carte choisie par le joueur.
+ * @param argv
+ * @return void
+ */
 void *listen_choix_carte_joueur(void *argv)
 {
     client *c = (client *) argv;
 
-    char *buffer = (char *) calloc(128, sizeof(char));
-    char message[1024];
+    char *message = (char *) malloc(1024 * sizeof(char));
 
     strcpy(message, "Choisissez une carte parmi celles que vous avez.\n");
 
@@ -290,7 +280,8 @@ void *listen_choix_carte_joueur(void *argv)
 
     while (1)
     {
-        recv(c->socket, buffer, sizeof(buffer) - 1, 0);
+        char *buffer = recv_client_data(c);
+
         int nb = atoi(buffer);
         if (nb == 0 || (nb > 10 || nb < 1))
         {
@@ -303,15 +294,18 @@ void *listen_choix_carte_joueur(void *argv)
             {
                 strcpy(message, "Cette carte a deja été utilisé choisissez en une autre.");
                 send(c->socket, message, strlen(message), 0);
-            }
-            else{
+            } else
+            {
                 c->joueur->carte[nb - 1].isUsed = 1;
                 c->joueur->carte_choisie = &c->joueur->carte[nb - 1];
                 break;
             }
         }
+        free(buffer);
+
     }
-    free(buffer);
+    free(message);
+
 }
 
 
@@ -320,41 +314,38 @@ void *listen_choix_carte_joueur(void *argv)
  * @param argv
  * @return void
  */
-void *listen_client_quit(void *argv){
-    client *c = (client *) argv;
+void client_quit(client *c)
+{
+    char *mess = (char *) malloc(1024 * sizeof(char));
 
-    char *buff = (char *) malloc(1024 * sizeof (char ));
-    char *mess = (char *) malloc(1024 * sizeof (char ));
-
-    while (1){
-        if(recv(c->socket,buff, strlen(buff),0) ==0)
-        {
-            sprintf(mess, "Le client : %s à quitter la partie, donc la partie s'arrete.", c->pseudo);
-            printf("%s\n",mess);
-            send_all_joueurs(clients,nb_client,mess);
-            close_all_clients();
-            free(buff);
-            free(mess);
-            exit(-1);
-        }
-    }
-}
-
-/**
- * @details Fonction qui lance des threads qui ecoute chaque client pour detecter si un client a quitter le jeu.
- */
-void listen_clients_quit(){
-    pthread_t  threads[nb_client];
-    for (int i = 0; i < nb_client; ++i)
-        pthread_create(&threads[i],NULL, &listen_client_quit, (void *) clients[i] );
+    sprintf(mess, "Le client : %s à quitter la partie, donc la partie s'arrete.", c->pseudo);
+    printf("%s\n", mess);
+    send_all_joueurs(clients, nb_client, mess);
+    close_all_clients();
+    free(mess);
+    exit(-1);
 
 }
 
 /**
  * @details Ferme le socket de tous les clients.
  */
-void close_all_clients(){
-    for(int i = 0 ; i< nb_client ; ++i){
+void close_all_clients()
+{
+    for (int i = 0; i < nb_client; ++i)
+    {
         close(clients[i]->socket);
     }
+}
+
+
+char *recv_client_data(client *c)
+{
+    char *buffer = (char *) calloc(1024 , sizeof(char *));
+
+    if (recv(c->socket, buffer, sizeof(buffer) - 1, 0) == 0)
+    {
+        client_quit(c);
+    }
+    return buffer;
 }
