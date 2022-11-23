@@ -48,5 +48,12 @@ int all_joueur_pret();
 
 void *listen_choix_carte_joueur(void *);
 
+void *listen_client_quit(void *);
+
+void listen_clients_quit();
+
+void close_all_clients();
+
+
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H

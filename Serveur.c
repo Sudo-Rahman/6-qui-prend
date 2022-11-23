@@ -70,6 +70,8 @@ int main(int argc, char **argv)
     send_all_joueurs(clients, nb_client, "Tous les joueurs sont pret la partie va commencer.");
     printf("La partie commence.\n");
 
+    listen_clients_quit();
+
 
     Jeu jeu;
     for (int i = 0; i < nb_client; i++)
@@ -312,3 +314,47 @@ void *listen_choix_carte_joueur(void *argv)
     free(buffer);
 }
 
+
+/**
+ * @details Ecoute du client mis en parametre si celui qui le serveur la partie s'arrete et tous les clients sont déconnecter du serveur.
+ * @param argv
+ * @return void
+ */
+void *listen_client_quit(void *argv){
+    client *c = (client *) argv;
+
+    char *buff = (char *) malloc(1024 * sizeof (char ));
+    char *mess = (char *) malloc(1024 * sizeof (char ));
+
+    while (1){
+        if(recv(c->socket,buff, strlen(buff),0) ==0)
+        {
+            sprintf(mess, "Le client : %s à quitter la partie, donc la partie s'arrete.", c->pseudo);
+            printf("%s\n",mess);
+            send_all_joueurs(clients,nb_client,mess);
+            close_all_clients();
+            free(buff);
+            free(mess);
+            exit(-1);
+        }
+    }
+}
+
+/**
+ * @details Fonction qui lance des threads qui ecoute chaque client pour detecter si un client a quitter le jeu.
+ */
+void listen_clients_quit(){
+    pthread_t  threads[nb_client];
+    for (int i = 0; i < nb_client; ++i)
+        pthread_create(&threads[i],NULL, &listen_client_quit, (void *) clients[i] );
+
+}
+
+/**
+ * @details Ferme le socket de tous les clients.
+ */
+void close_all_clients(){
+    for(int i = 0 ; i< nb_client ; ++i){
+        close(clients[i]->socket);
+    }
+}
