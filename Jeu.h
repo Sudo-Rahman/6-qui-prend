@@ -8,29 +8,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/time.h>
 #include <math.h>
 #include "Color.h"
+
 
 #define MAX_JOUEURS 10
 #define MIN_JOUEURS 2
 
 
-typedef struct Carte
-{
+typedef struct Carte {
     unsigned short Numero, Tete, isPicked, isUsed;
 } Carte;
 
-typedef struct Joueur
-{
+typedef struct Joueur {
     unsigned short nb_penalite, nb_defaite;
     Carte *carte[10];
     Carte *carte_choisie;
 } Joueur;
 
 
-typedef struct Jeu
-{
+typedef struct Jeu {
     Carte **plateau;
     Joueur *joueur[MAX_JOUEURS];
     Carte *liste_carte[104];
@@ -261,8 +260,7 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu);
 void place_carte_mini(Jeu *jeu, int ligne, Joueur *j);
 
 
-void initJeu(Jeu *jeu)
-{
+void initJeu(Jeu *jeu) {
 
     jeu->plateau = creePlateau(); // Création du plateau de carte 4*6
 
@@ -285,29 +283,25 @@ void initJeu(Jeu *jeu)
 }
 
 
-void resetJeu(Jeu *jeu)
-{
+void resetJeu(Jeu *jeu) {
     isOver = 0;
     tour = 1;
     initJeu(jeu);
 }
 
-void freeJeu(Jeu jeu)
-{
+void freeJeu(Jeu jeu) {
     for (int i = 0; i < 6; i++) free(jeu.plateau[i]);
     free(jeu.plateau);
 }
 
-Carte **creePlateau()
-{
+Carte **creePlateau() {
     Carte **plateau = (Carte **) malloc(6 * sizeof(Carte *));
     for (int i = 0; i < 6; i++) plateau[i] = (Carte *) malloc(6 * sizeof(Carte));
     return plateau;
 }
 
 
-void creation_premiere_colonne_plateau(Jeu *jeu)
-{
+void creation_premiere_colonne_plateau(Jeu *jeu) {
 
     Carte *cartes[4];
 
@@ -315,12 +309,9 @@ void creation_premiere_colonne_plateau(Jeu *jeu)
         cartes[i] = get_carte_liste(jeu);
 
 
-    for (int j = 1; j <= 4; j++)
-    {
-        for (int i = 0; i < 3; i++)
-        {
-            if (cartes[i]->Numero > cartes[i + 1]->Numero)
-            {
+    for (int j = 1; j <= 4; j++) {
+        for (int i = 0; i < 3; i++) {
+            if (cartes[i]->Numero > cartes[i + 1]->Numero) {
                 Carte *c = cartes[i];
                 cartes[i] = cartes[i + 1];
                 cartes[i + 1] = c;
@@ -334,19 +325,15 @@ void creation_premiere_colonne_plateau(Jeu *jeu)
 
 }
 
-Joueur **get_ordre_joueur_tour(Jeu *jeu)
-{
+Joueur **get_ordre_joueur_tour(Jeu *jeu) {
     Joueur **joueurs = (Joueur **) malloc(nb_Joueur * sizeof(Joueur *));
 
     for (int i = 0; i < nb_Joueur; ++i)
         joueurs[i] = jeu->joueur[i];
 
-    for (int j = 1; j <= nb_Joueur; j++)
-    {
-        for (int i = 0; i < nb_Joueur - 1; i++)
-        {
-            if (joueurs[i]->carte_choisie->Numero > joueurs[i + 1]->carte_choisie->Numero)
-            {
+    for (int j = 1; j <= nb_Joueur; j++) {
+        for (int i = 0; i < nb_Joueur - 1; i++) {
+            if (joueurs[i]->carte_choisie->Numero > joueurs[i + 1]->carte_choisie->Numero) {
                 Joueur *jo = joueurs[i];
                 joueurs[i] = joueurs[i + 1];
                 joueurs[i + 1] = jo;
@@ -357,62 +344,51 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu)
     return joueurs;
 }
 
-char *affiche_plateau(Jeu *jeu)
-{
+char *affiche_plateau(Jeu *jeu) {
     char *res = (char *) malloc(1024 * sizeof(char));
 
     sprintf(res, BOLD_HIGH_WHITE"\t\t\t\t\t\tPLATEAU:\n"RESET);
 
-    for (int i = 0; i < 4; i++)
-    {
-        sprintf(res + strlen(res), "Ligne %u\t", i+1);
+    for (int i = 0; i < 4; i++) {
+        sprintf(res + strlen(res), "Ligne %u\t", i + 1);
         for (int j = 0; j < 6; j++)
-            sprintf(res + strlen(res), BOLD_HIGH_WHITE"\t[%03d-%d]\t"RESET ,jeu->plateau[i][j].Numero,
+            sprintf(res + strlen(res), BOLD_HIGH_WHITE"\t[%03d-%d]\t"RESET, jeu->plateau[i][j].Numero,
                     jeu->plateau[i][j].Tete);
         sprintf(res + strlen(res), "\n");
     }
     return res;
 }
 
-unsigned char get_pos_carte_derniere_ligne(Jeu *jeu, int ligne)
-{
-    for (int i = 0; i < 6; ++i)
-    {
-        if (jeu->plateau[ligne][i].Numero == 0)
-        {
+unsigned char get_pos_carte_derniere_ligne(Jeu *jeu, int ligne) {
+    for (int i = 0; i < 6; ++i) {
+        if (jeu->plateau[ligne][i].Numero == 0) {
             return i - 1;
         }
     }
     return 0;
 }
 
-char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte)
-{
+char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte) {
     char pos = get_pos_carte_mini(jeu, carte->Numero);
     if (pos == -1)
         return -1;
-    if (pos % 6 == 4)
-    {
+    if (pos % 6 == 4) {
         return 0;
-    } else
-    {
+    } else {
         jeu->plateau[pos / 6][(pos % 6) + 1] = *carte;
         return 1;
     }
 }
 
 
-void place_carte_mini(Jeu *jeu, int ligne, Joueur *j)
-{
+void place_carte_mini(Jeu *jeu, int ligne, Joueur *j) {
     int penalite = 0;
-    for (int i = 0; i < 6; ++i)
-    {
+    for (int i = 0; i < 6; ++i) {
         if (jeu->plateau[ligne][i].Numero == 0)
             break;
         penalite += jeu->plateau[ligne][i].Tete;
     }
-    for (int i = 0; i < 6; ++i)
-    {
+    for (int i = 0; i < 6; ++i) {
         if (jeu->plateau[ligne][i].Numero == 0)
             break;
         Carte c = {0, 0, 0, 0};
@@ -423,19 +399,14 @@ void place_carte_mini(Jeu *jeu, int ligne, Joueur *j)
 }
 
 
-
-char get_pos_carte_mini(Jeu *jeu, int numero)
-{
+char get_pos_carte_mini(Jeu *jeu, int numero) {
     short diff = numero - get_dernier_carte_ligne(jeu, 0);
     char pos = -1;
     if (diff > 0)
         pos = get_pos_carte_derniere_ligne(jeu, 0);
-    for (int i = 1; i < 4; ++i)
-    {
-        if ((numero - get_dernier_carte_ligne(jeu, i)) >= 0)
-        {
-            if ((numero - get_dernier_carte_ligne(jeu, i)) < diff)
-            {
+    for (int i = 1; i < 4; ++i) {
+        if ((numero - get_dernier_carte_ligne(jeu, i)) >= 0) {
+            if ((numero - get_dernier_carte_ligne(jeu, i)) < diff) {
                 diff = numero - get_dernier_carte_ligne(jeu, i);
                 pos = (i * 6) + get_pos_carte_derniere_ligne(jeu, i);
             }
@@ -445,13 +416,10 @@ char get_pos_carte_mini(Jeu *jeu, int numero)
 }
 
 
-unsigned short getCartePlusPetiteDuPlateau(Jeu jeu)
-{
+unsigned short getCartePlusPetiteDuPlateau(Jeu jeu) {
     unsigned short min = 104; //Min théorique dans la liste de carte
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 6; j++)
-        {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 6; j++) {
             if (jeu.plateau[i][j].Numero == 0)
                 continue; //Saute la carte quand elle vaut 0 car ce n'est pas une carte
             else if (jeu.plateau[i][j].Numero < min) min = jeu.plateau[i][j].Numero;
@@ -460,23 +428,18 @@ unsigned short getCartePlusPetiteDuPlateau(Jeu jeu)
     return min; // Retourne le numero de carte le plus petit du plateau
 }
 
-unsigned char get_dernier_carte_ligne(Jeu *jeu, int ligne)
-{
-    for (int i = 0; i < 6; ++i)
-    {
-        if (jeu->plateau[ligne][i].Numero == 0)
-        {
+unsigned char get_dernier_carte_ligne(Jeu *jeu, int ligne) {
+    for (int i = 0; i < 6; ++i) {
+        if (jeu->plateau[ligne][i].Numero == 0) {
             return jeu->plateau[ligne][i - 1].Numero;
         }
     }
     return 0;
 }
 
-void PrintTableau(Jeu jeu)
-{
+void PrintTableau(Jeu jeu) {
     fprintf(fichier_log, "\t\t\t\t\t\t\t\tPLATEAU:\n");
-    for (int i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 6; j++)
             fprintf(fichier_log, "\t[%03d-%d]\t", jeu.plateau[i][j].Numero, jeu.plateau[i][j].Tete);
         fprintf(fichier_log, "\n");
@@ -484,8 +447,7 @@ void PrintTableau(Jeu jeu)
     fprintf(fichier_log, "\n");
 }
 
-Carte *create_carte(unsigned short i)
-{
+Carte *create_carte(unsigned short i) {
     Carte *c = (Carte *) malloc(sizeof(Carte));
     c->Numero = i;
     c->isPicked = 0;
@@ -494,15 +456,12 @@ Carte *create_carte(unsigned short i)
     return c;
 }
 
-Carte *get_carte_liste(Jeu *jeu)
-{
+Carte *get_carte_liste(Jeu *jeu) {
     Carte *tmp[104];
     int cpt = 0;
     //Parcours de la liste pour trouver les cartes pas encore prise
-    for (int i = 0; i < 104; ++i)
-    {
-        if (jeu->liste_carte[i]->isPicked == 0)
-        {
+    for (int i = 0; i < 104; ++i) {
+        if (jeu->liste_carte[i]->isPicked == 0) {
             tmp[cpt] = jeu->liste_carte[i];
             cpt++;
         }
@@ -514,12 +473,10 @@ Carte *get_carte_liste(Jeu *jeu)
     return c;
 }
 
-char *affiche_cartes_joueur(Joueur *joueur)
-{
+char *affiche_cartes_joueur(Joueur *joueur) {
     char *res = malloc(1024 * sizeof(char));
 
-    for (int i = 0; i < 10; i++)
-    {
+    for (int i = 0; i < 10; i++) {
         if (joueur->carte[i]->isUsed == 0)
             sprintf(res + strlen(res), "Carte %02d > Numéro[%03d] Tete[%d]\n", i + 1, joueur->carte[i]->Numero,
                     joueur->carte[i]->Tete);
@@ -527,29 +484,23 @@ char *affiche_cartes_joueur(Joueur *joueur)
     return res;
 }
 
-unsigned short getCarteRestante(Jeu jeu)
-{
+unsigned short getCarteRestante(Jeu jeu) {
     unsigned short cpt = 0;
     for (int i = 0; i < 104; i++) if (jeu.liste_carte[i]->isPicked == 0) cpt++;
     return cpt;
 }
 
-void distribution_carte_joueurs(Jeu *jeu)
-{
+void distribution_carte_joueurs(Jeu *jeu) {
     for (int i = 0; i < nb_Joueur; i++)
         distribution_carte_joueur(jeu, jeu->joueur[i]);
 }
 
-unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte)
-{
+unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte) {
     int tabLastNumber[4];
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 6; j++)
-        {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 6; j++) {
             //Recupère dernier nombre des lignes du plateau
-            if (jeu.plateau[i][j].Numero != 0)
-            {
+            if (jeu.plateau[i][j].Numero != 0) {
                 tabLastNumber[i] = jeu.plateau[i][j].Numero;
             } else break;
         }
@@ -557,15 +508,12 @@ unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte)
     int min = 104; // La valeur maximale d'une carte est par défaut le minimum
     int position = 0;
     //Calcul la différence d'écart avec ces nombres
-    for (int i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         tabLastNumber[i] = abs(tabLastNumber[i] - numeroCarte);
     }
     //On cherche le minimum du tableau qui sera là où on pose la carte
-    for (int i = 0; i < 4; i++)
-    {
-        if (tabLastNumber[i] < min)
-        {
+    for (int i = 0; i < 4; i++) {
+        if (tabLastNumber[i] < min) {
             min = tabLastNumber[i];
             position = i;
         }
@@ -573,13 +521,10 @@ unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte)
     return position; //Retourne la position de la colonne au rang n-1
 }
 
-unsigned short getLastPositionDeLaLigne(Jeu jeu, int colonne)
-{
+unsigned short getLastPositionDeLaLigne(Jeu jeu, int colonne) {
     unsigned short lastPosition = 0;
-    for (short i = 0; i < 6; i++)
-    {
-        if (jeu.plateau[colonne][i].Numero == 0)
-        {
+    for (short i = 0; i < 6; i++) {
+        if (jeu.plateau[colonne][i].Numero == 0) {
             lastPosition = i;
             break;
         }
@@ -587,9 +532,7 @@ unsigned short getLastPositionDeLaLigne(Jeu jeu, int colonne)
     return lastPosition;
 }
 
-
-char *Statistique(Jeu jeu)
-{
+char *Statistique(Jeu jeu) {
 
     char *tmp = malloc(300 * sizeof(char));
 
@@ -609,12 +552,11 @@ char *Statistique(Jeu jeu)
     return res;
 }
 
-char *RecapRegle(Jeu jeu)
-{
+char *RecapRegle(Jeu jeu) {
 
     char *tmp = malloc(255 * sizeof(char));
 
-    sprintf(tmp, BOLD_HIGH_WHITE"\t\nREGLE DU JEU:\n"RESET);
+    sprintf(tmp, BOLD_HIGH_WHITE"\t\nINFO DU JEU:\n"RESET);
     sprintf(tmp + strlen(tmp), "Le nombre de têtes maximal est de ");
     sprintf(tmp + strlen(tmp), BOLD_MAGENTA"%d"RESET, nb_TeteMax);
     sprintf(tmp + strlen(tmp), "\nLe nombre de tours maximal est de ");
@@ -629,13 +571,11 @@ char *RecapRegle(Jeu jeu)
     return res;
 }
 
-char *AfficheNbTeteJoueurs(Jeu jeu)
-{
+char *AfficheNbTeteJoueurs(Jeu jeu) {
 
     char *tmp = malloc(45 * nb_Joueur * sizeof(char));
 
-    for (short i = 0; i < nb_Joueur; i++)
-    {
+    for (short i = 0; i < nb_Joueur; i++) {
         sprintf(tmp + strlen(tmp), BOLD_CYAN"Le joueur %d possède %d têtes \n"RESET, i, jeu.joueur[i]->nb_penalite);
         fprintf(fichier_log, "ROUND [%d] > Le joueur %d possède %d têtes\n", tour, i, jeu.joueur[i]->nb_penalite);
     }
@@ -647,33 +587,27 @@ char *AfficheNbTeteJoueurs(Jeu jeu)
     return res;
 }
 
-void distribution_carte_joueur(Jeu *jeu, Joueur *j)
-{
+void distribution_carte_joueur(Jeu *jeu, Joueur *j) {
     for (int i = 0; i < 10; i++)
         j->carte[i] = get_carte_liste(jeu);
 }
 
-unsigned short getNbCarteUtilisableDuJoueur(Jeu jeu, short idJoueur)
-{
+unsigned short getNbCarteUtilisableDuJoueur(Jeu jeu, short idJoueur) {
     unsigned short cpt = 0;
     for (int i = 0; i < 10; i++) if (jeu.joueur[idJoueur]->carte[i]->isUsed == 0) cpt++;
     return cpt;
 }
 
-char *MinEtMaxDefaite(Jeu jeu)
-{
+char *MinEtMaxDefaite(Jeu jeu) {
     unsigned short min = jeu.joueur[0]->nb_defaite, max = jeu.joueur[0]->nb_defaite;
     unsigned short imin = 0, imax = 0;
 
-    for (int i = 0; i < nb_Joueur; i++)
-    {
-        if (jeu.joueur[i]->nb_defaite < min)
-        {
+    for (int i = 0; i < nb_Joueur; i++) {
+        if (jeu.joueur[i]->nb_defaite < min) {
             min = jeu.joueur[i]->nb_defaite;
             imin = i;
         }
-        if (jeu.joueur[i]->nb_defaite > max)
-        {
+        if (jeu.joueur[i]->nb_defaite > max) {
             max = jeu.joueur[i]->nb_defaite;
             imax = i;
         }
@@ -701,22 +635,83 @@ char *MinEtMaxDefaite(Jeu jeu)
     return res;
 }
 
-int MoyenneDesTetes(Jeu jeu)
-{
+int MoyenneDesTetes(Jeu jeu) {
     int somme = 0;
     for (int i = 0; i < nb_Joueur; i++) somme += jeu.joueur[i]->nb_penalite;
     return somme / nb_Joueur;
 }
 
-void ForceFinDuJeu()
-{
+/**
+ * @details Fonction pour forcer la fin du jeu et fermer les flux correctement
+ */
+void ForceFinDuJeu() {
     printf(RESET);
-    isOver = 1;
-    nextPartie = 1;
-    fprintf(fichier_log, "\n***LE JEU A ETE ARRETE***\n");
-    fclose(fichier_log);
+    fflush(stdout);
+    fflush(stdin);
     exit(0);
 }
 
+
+char *AskNombreUser(int min, int max) {
+    unsigned short TAILLE = 32;
+    char str[32] = "";
+    scanf("%s", str);
+    if (strlen(str) > TAILLE) str[0] = '\0'; //Gestion cas ou nombre est trop grand pour pas crash le programme
+
+    //SI utilisateur veut arrêter le jeu en appuyant sur x
+    if (strcmp(str, "x") == 0 || strcmp(str, "X") == 0) {
+        printf(BOLD_RED"ARRET DU JEU...\n"RESET);
+        ForceFinDuJeu();
+        return 0;
+    }
+    int nombre = atoi(str);//Conversion de la chaine de caractère en nombre entier pour savoir le nombre entré
+    while (nombre < min || nombre > max) {
+        printf(BOLD_RED"La valeur doit être comprise entre [%d-%d], vous avez entré : %d\n>"RESET, min, max, nombre);
+        scanf("%s", str);
+        if (strlen(str) > TAILLE) str[0] = '\0';
+        if (strcmp(str, "x") == 0 || strcmp(str, "X") == 0) {
+            printf(BOLD_RED"ARRET DU JEU...\n"RESET);
+            ForceFinDuJeu();
+            return 0;
+        }
+        nombre = atoi(str);
+        fflush(stdin);
+        fflush(stdout);
+    }
+
+    fflush(stdin);
+    fflush(stdout);
+
+    char *nombre_toStd = malloc(max * sizeof(char));
+    sprintf(nombre_toStd, "%d", nombre);
+    return nombre_toStd;
+}
+
+
+/**
+ * @details Fonction de gestion des signaux du programme
+ * @param signal_recu
+ */
+void GestionSignaux(int signal_recu) {
+
+    switch (signal_recu) {
+
+        //SIGNAL CTRL + C
+        case SIGINT:
+            printf(BOLD_YELLOW"\nPOUR ARRETER LE JEU, APPUYER SUR X\n"RESET);
+            ForceFinDuJeu();
+            break;
+
+            //SIGNAL POUR ARRETER PROGRAMME
+        case SIGTERM:
+            printf(BOLD_YELLOW"\nSIGNAL SIGTERM RECU\n"RESET);
+            ForceFinDuJeu();
+            break;
+
+        default:
+            printf(BOLD_YELLOW"\nSIGNAL RECU > %d\n"RESET, signal_recu);
+            break;
+    }
+}
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_JEU_H
