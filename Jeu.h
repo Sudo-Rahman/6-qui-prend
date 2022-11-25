@@ -55,7 +55,7 @@ void initJeu(Jeu *jeu);
  * @details Fonction pour créer un plateau de carte
  * @return Un tableau de carte représentant le plateau
  */
-Carte **creePlateau();
+Carte **cree_plateau();
 
 
 /**
@@ -197,7 +197,7 @@ unsigned short getCartePlusPetiteDuPlateau(Jeu jeu);
 /**
  * @brief Retourne sous forme de chaine de charactere les cartes du joueur en parametre.
  * @param joueur
- * @return La liste des cartes du Joueur joueur.
+ * @return La liste des cartes du joueur en paramtere.
  */
 char *affiche_cartes_joueur(Joueur *joueur);
 
@@ -258,13 +258,13 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu);
  * @param ligne
  * @param j
  */
-void place_carte_mini(Jeu *jeu, int ligne, Joueur *j);
+void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j);
 
 
 void initJeu(Jeu *jeu)
 {
 
-    jeu->plateau = creePlateau(); // Création du plateau de carte 4*6
+    jeu->plateau = cree_plateau(); // Création du plateau de carte 4*6
 
     //Creation des 104 cartes avec numéro de tête random
     for (int i = 0; i < 104; i++) jeu->liste_carte[i] = create_carte(i + 1);
@@ -298,7 +298,7 @@ void freeJeu(Jeu jeu)
     free(jeu.plateau);
 }
 
-Carte **creePlateau()
+Carte **cree_plateau()
 {
     Carte **plateau = (Carte **) malloc(6 * sizeof(Carte *));
     for (int i = 0; i < 6; i++) plateau[i] = (Carte *) malloc(6 * sizeof(Carte));
@@ -402,7 +402,7 @@ char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte)
 }
 
 
-void place_carte_mini(Jeu *jeu, int ligne, Joueur *j)
+void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j)
 {
     int penalite = 0;
     for (int i = 0; i < 6; ++i)

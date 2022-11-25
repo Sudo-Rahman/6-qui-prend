@@ -64,8 +64,7 @@ int main(int argc, char **argv)
     pthread_create(&thread, NULL, &listen_joueurs, NULL);
 
 
-    while (all_joueur_pret() == 0)
-    {}
+    while (all_joueur_pret() == 0) {}
 
     send_all_joueurs(clients, nb_client, "Tous les joueurs sont pret la partie va commencer.");
     printf("La partie commence.\n");
@@ -81,7 +80,6 @@ int main(int argc, char **argv)
 
     send_all_joueurs(clients, nb_client, RecapRegle(jeu));
     send_all_joueurs(clients, nb_client, affiche_plateau(&jeu));
-
 
 
     jeu_play(&jeu);
@@ -122,7 +120,8 @@ void *joueur_pret(void *argv)
     return 0;
 }
 
-void jeu_play(Jeu *jeu){
+void jeu_play(Jeu *jeu)
+{
     while (1)
     {
         pthread_t threads[nb_client];
@@ -136,29 +135,28 @@ void jeu_play(Jeu *jeu){
         for (int i = 0; i < nb_client; ++i)
         {
             int retour = ajoute_carte_au_plateau(jeu, joueurs[i]->carte_choisie);
-            if (retour == 0)
+            if (retour == 0 || retour == -1)
             {
-                printf("joueur : %s ", clients[i]->pseudo);
-            } else
-            {
-                if (retour == -1)
+                client *c;
+                for (int j = 0; j < nb_client; ++j)
                 {
-                    client *c;
-                    for (int j = 0; j < nb_client; ++j)
-                    {
-                        if(clients[j]->joueur == joueurs[i])
-                            c = clients[j];
+                    if (clients[j]->joueur == joueurs[i])
+                        c = clients[j];
 
-                    }
-                    int ligne = carte_trop_petite(c);
-                    place_carte_mini(jeu,ligne,c->joueur);
                 }
+                int ligne = get_pos_carte_mini(jeu,joueurs[i]->carte_choisie->Numero)/6;
+                if (retour == -1)
+                    ligne = carte_trop_petite(c);
+                place_carte_si_trop_petite_ou_derniere_ligne(jeu, ligne, c->joueur);
+                printf("joueur : %s tete : %i", clients[i]->pseudo, c->joueur->nb_penalite);
+                fflush(stdout);
             }
         }
-        send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
         free(joueurs);
+        send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
     }
 }
+
 
 
 /**
@@ -380,7 +378,7 @@ char *recv_client_data(client *c)
 /**
  * @details Quand un joueur joue une carte qui est trop petite.
  * @param c
- * @return ligne choisie par le client.
+ * @return Ligne choisie par le client.
  */
 int carte_trop_petite(client *c)
 {
@@ -388,17 +386,19 @@ int carte_trop_petite(client *c)
     char *message = "Votre carte est trop petite, vous devez choisir la ligne"
                     " ou la mettre\nsuite a cela vous aurez la somme des tetes des cartes de la ligne en pénalité.";
 
-    send(c->socket, message, strlen(message),0);
+    send(c->socket, message, strlen(message), 0);
     int nb = 10;
-    while (nb <1 || nb >4){
-       char *buff = recv_client_data(c);
-       nb = atoi(buff);
+    while (nb < 1 || nb > 4)
+    {
+        char *buff = recv_client_data(c);
+        nb = atoi(buff);
 
-       if(nb <1 || nb >4){
-           strcpy(message, "Ligne incorrecte, refaite la saisie.");
-           send(c->socket, message, strlen(message),0);
-       }
-       free(buff);
-   }
-    return nb-1;
+        if (nb < 1 || nb > 4)
+        {
+            strcpy(message, "Ligne incorrecte, refaite la saisie.");
+            send(c->socket, message, strlen(message), 0);
+        }
+        free(buff);
+    }
+    return nb - 1;
 }
