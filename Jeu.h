@@ -55,7 +55,7 @@ void initJeu(Jeu *jeu);
  * @details Fonction pour créer un plateau de carte
  * @return Un tableau de carte représentant le plateau
  */
-Carte **cree_plateau();
+Carte **creePlateau();
 
 
 /**
@@ -197,7 +197,7 @@ unsigned short getCartePlusPetiteDuPlateau(Jeu jeu);
 /**
  * @brief Retourne sous forme de chaine de charactere les cartes du joueur en parametre.
  * @param joueur
- * @return La liste des cartes du joueur en paramtere.
+ * @return La liste des cartes du Joueur joueur.
  */
 char *affiche_cartes_joueur(Joueur *joueur);
 
@@ -264,7 +264,7 @@ void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j
 void initJeu(Jeu *jeu)
 {
 
-    jeu->plateau = cree_plateau(); // Création du plateau de carte 4*6
+    jeu->plateau = creePlateau(); // Création du plateau de carte 4*6
 
     //Creation des 104 cartes avec numéro de tête random
     for (int i = 0; i < 104; i++) jeu->liste_carte[i] = create_carte(i + 1);
@@ -614,7 +614,7 @@ char *RecapRegle(Jeu jeu)
 
     char *tmp = malloc(255 * sizeof(char));
 
-    sprintf(tmp, BOLD_HIGH_WHITE"\t\nREGLE DU JEU:\n"RESET);
+    sprintf(tmp, BOLD_HIGH_WHITE"\t\nINFO DU JEU:\n"RESET);
     sprintf(tmp + strlen(tmp), "Le nombre de têtes maximal est de ");
     sprintf(tmp + strlen(tmp), BOLD_MAGENTA"%d"RESET, nb_TeteMax);
     sprintf(tmp + strlen(tmp), "\nLe nombre de tours maximal est de ");
