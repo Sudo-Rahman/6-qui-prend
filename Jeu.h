@@ -361,15 +361,15 @@ char *affiche_plateau(Jeu *jeu)
 {
     char *res = (char *) malloc(1024 * sizeof(char));
 
-    sprintf(res, BOLD_HIGH_WHITE"\t\t\t\t\t\tPLATEAU:\n"RESET);
+    snprintf(res,1024, BOLD_HIGH_WHITE"\t\t\t\t\t\tPLATEAU:\n"RESET);
 
     for (int i = 0; i < 4; i++)
     {
-        sprintf(res + strlen(res), "Ligne %u\t", i+1);
+        snprintf(res+ strlen(res),1024, "Ligne %u\t", i+1);
         for (int j = 0; j < 6; j++)
-            sprintf(res + strlen(res), BOLD_HIGH_WHITE"\t[%03d-%d]\t"RESET ,jeu->plateau[i][j].Numero,
+            snprintf(res + strlen(res),1024, BOLD_HIGH_WHITE"\t[%03d-%d]\t"RESET ,jeu->plateau[i][j].Numero,
                     jeu->plateau[i][j].Tete);
-        sprintf(res + strlen(res), "\n");
+        snprintf(res + strlen(res),1024, "\n");
     }
     return res;
 }
@@ -521,7 +521,7 @@ char *affiche_cartes_joueur(Joueur *joueur)
     for (int i = 0; i < 10; i++)
     {
         if (joueur->carte[i]->isUsed == 0)
-            sprintf(res + strlen(res), "Carte %02d > Numéro[%03d] Tete[%d]\n", i + 1, joueur->carte[i]->Numero,
+            snprintf(res + strlen(res),1024, "Carte %02d > Numéro[%03d] Tete[%d]\n", i + 1, joueur->carte[i]->Numero,
                     joueur->carte[i]->Tete);
     }
     return res;
@@ -594,9 +594,9 @@ char *Statistique(Jeu jeu)
     char *tmp = malloc(300 * sizeof(char));
 
     //DANS TERMINAL
-    sprintf(tmp + strlen(tmp), BOLD_CYAN"\t[STATISTIQUES]\n"RESET);
-    sprintf(tmp + strlen(tmp), "Nombre de parties joué : %d\n", nb_Partie);
-    sprintf(tmp + strlen(tmp), "Moyenne des têtes obtenues : %d\n", MoyenneDesTetes(jeu));
+    snprintf(tmp + strlen(tmp),1024, BOLD_CYAN"\t[STATISTIQUES]\n"RESET);
+    snprintf(tmp + strlen(tmp),1024, "Nombre de parties joué : %d\n", nb_Partie);
+    snprintf(tmp + strlen(tmp),1024, "Moyenne des têtes obtenues : %d\n", MoyenneDesTetes(jeu));
 
     //DANS FICHIER
     fprintf(fichier_log, "\t[STATISTIQUES]\n");
@@ -614,13 +614,13 @@ char *RecapRegle(Jeu jeu)
 
     char *tmp = malloc(255 * sizeof(char));
 
-    sprintf(tmp, BOLD_HIGH_WHITE"\t\nINFO DU JEU:\n"RESET);
-    sprintf(tmp + strlen(tmp), "Le nombre de têtes maximal est de ");
-    sprintf(tmp + strlen(tmp), BOLD_MAGENTA"%d"RESET, nb_TeteMax);
-    sprintf(tmp + strlen(tmp), "\nLe nombre de tours maximal est de ");
-    sprintf(tmp + strlen(tmp), BOLD_MAGENTA"%d\n"RESET, nb_MancheMax);
-    sprintf(tmp + strlen(tmp), "Nombre de joueurs: ");
-    sprintf(tmp + strlen(tmp), BOLD_MAGENTA"%d\n"RESET, nb_Joueur);
+    snprintf(tmp,1024, BOLD_HIGH_WHITE"\t\nINFO DU JEU:\n"RESET);
+    snprintf(tmp + strlen(tmp),1024, "Le nombre de têtes maximal est de ");
+    snprintf(tmp + strlen(tmp),1024, BOLD_MAGENTA"%d"RESET, nb_TeteMax);
+    snprintf(tmp + strlen(tmp),1024, "\nLe nombre de tours maximal est de ");
+    snprintf(tmp + strlen(tmp),1024, BOLD_MAGENTA"%d\n"RESET, nb_MancheMax);
+    snprintf(tmp + strlen(tmp),1024, "Nombre de joueurs: ");
+    snprintf(tmp + strlen(tmp),1024, BOLD_MAGENTA"%d\n"RESET, nb_Joueur);
 
     char *res = malloc(strlen(tmp) * sizeof(char));
     strcpy(res, tmp);
@@ -636,7 +636,7 @@ char *AfficheNbTeteJoueurs(Jeu jeu)
 
     for (short i = 0; i < nb_Joueur; i++)
     {
-        sprintf(tmp + strlen(tmp), BOLD_CYAN"Le joueur %d possède %d têtes \n"RESET, i, jeu.joueur[i]->nb_penalite);
+        snprintf(tmp + strlen(tmp),1024, BOLD_CYAN"Le joueur %d possède %d têtes \n"RESET, i, jeu.joueur[i]->nb_penalite);
         fprintf(fichier_log, "ROUND [%d] > Le joueur %d possède %d têtes\n", tour, i, jeu.joueur[i]->nb_penalite);
     }
     fprintf(fichier_log, "\n");
@@ -684,8 +684,8 @@ char *MinEtMaxDefaite(Jeu jeu)
     //DANS TERMINAL
 //    printf("Le joueur ayant obtenue le moins de défaite est le joueur %d avec %d défaites\n", imin, min);
 //    printf("Le joueur ayant obtenue le plus de défaite est le joueur %d avec %d défaites\n", imax, max);
-    sprintf(tmp, "Le joueur ayant obtenue le moins de défaite est le joueur %d avec %d défaites\n", imin, min);
-    sprintf(tmp + strlen(tmp), "Le joueur ayant obtenue le plus de défaite est le joueur %d avec %d défaites\n",
+    snprintf(tmp,1024, "Le joueur ayant obtenue le moins de défaite est le joueur %d avec %d défaites\n", imin, min);
+    snprintf(tmp + strlen(tmp),1024, "Le joueur ayant obtenue le plus de défaite est le joueur %d avec %d défaites\n",
             imax,
             max);
 

@@ -12,6 +12,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "Serveur.h"
+#include <signal.h>
+
 
 // ********* //
 // VARIABLES //
@@ -143,7 +145,7 @@ void *joueur_pret(void *argv) {
 
         if (strcmp(buffer, "pret") == 0 || strcmp(buffer, "y") == 0) {
             c->pret = 1;
-            sprintf(message, BOLD_GREEN"Le joueur %s à mis prêt."RESET, c->pseudo);
+            snprintf(message, 1024,BOLD_GREEN"Le joueur %s à mis prêt."RESET, c->pseudo);
             send_all_joueurs(clients, nb_client, message);
             break;
         }
@@ -240,10 +242,10 @@ void *listen_joueurs() {
         strcpy(c->pseudo, buffer);
 
         printf("Connection réalisé avec le joueur %s\n", c->pseudo);
-        sprintf(message, "Vous avez rejoint le serveur, vous êtes le joueur n°%u.", nb_client + 1);
+        snprintf(message,1024, "Vous avez rejoint le serveur, vous êtes le joueur n°%u.", nb_client + 1);
         send(client_socket, message, strlen(message), 0);
 
-        sprintf(message, "Le joueur : %s vient de se connecter.", c->pseudo);
+        snprintf(message,1024, "Le joueur : %s vient de se connecter.", c->pseudo);
         fprintf(fichier_log, "Le joueur : %s vient de se connecter.\n", c->pseudo);
 
         send_all_joueurs(clients, nb_client, message);
@@ -310,12 +312,12 @@ void *listen_choix_carte_joueur(void *argv) {
 
 
         //AFFICHAGE DES INFOS DU JOUEUR
-        sprintf(message + strlen(message), BOLD_CYAN"\n\t*** ROUND [%d] ***\n"RESET, tour);
-        sprintf(message + strlen(message), BOLD_CYAN"\n\t*** MANCHE [%d] ***\n\n"RESET,
+        snprintf(message + strlen(message),1024, BOLD_CYAN"\n\t*** ROUND [%d] ***\n"RESET, tour);
+        snprintf(message + strlen(message),1024, BOLD_CYAN"\n\t*** MANCHE [%d] ***\n\n"RESET,
                 abs(getNbCarteUtilisableDuJoueur(jeu, (unsigned short) c->numero_joueur) - 10));
-        sprintf(message + strlen(message), BOLD_BLUE"Joueur %s, il vous reste %d cartes:\n"RESET, c->pseudo,
+        snprintf(message + strlen(message),1024, BOLD_BLUE"Joueur %s, il vous reste %d cartes:\n"RESET, c->pseudo,
                 getNbCarteUtilisableDuJoueur(jeu, (unsigned short) c->numero_joueur));
-        sprintf(message + strlen(message), "Vous possedez %d tetes\n", c->joueur[c->numero_joueur].nb_penalite);
+        snprintf(message + strlen(message),1024, "Vous possedez %d tetes\n", c->joueur[c->numero_joueur].nb_penalite);
         send(c->socket, message, strlen(message), 0);
         strcpy(message, affiche_cartes_joueur(c->joueur));
         send(c->socket, message, strlen(message), 0);
@@ -352,7 +354,7 @@ void *listen_choix_carte_joueur(void *argv) {
         //Si joueur n'a pas de carte, on lui en redonnne 10
         if (getNbCarteUtilisableDuJoueur(jeu, c->numero_joueur) == 0) {
             distribution_carte_joueur(&jeu, jeu.joueur[c->numero_joueur]);
-            sprintf(message, "Le joueur %s reçoit 10 cartes\n", c->pseudo);
+            snprintf(message,1024, "Le joueur %s reçoit 10 cartes\n", c->pseudo);
             send(c->socket, message, strlen(message), 0);
             printf("Le joueur %s reçoit 10 cartes", c->pseudo);
         }
@@ -365,7 +367,7 @@ void *listen_choix_carte_joueur(void *argv) {
 
 void client_quit(client *c) {
     char *mess = (char *) malloc(1024 * sizeof(char));
-    sprintf(mess, BOLD_YELLOW"Le client %s a quitté la partie\nLA PARTIE A ÉTÉ INTERROMPU"RESET, c->pseudo);
+    snprintf(mess,1024, BOLD_YELLOW"Le client %s a quitté la partie\nLA PARTIE A ÉTÉ INTERROMPU"RESET, c->pseudo);
     printf("%s\n", mess);
     fprintf(fichier_log, "Le client : %s a quitté la partie\nLA PARTIE A ÉTÉ INTERROMPU", c->pseudo);
     send_all_joueurs(clients, nb_client, mess);
@@ -451,10 +453,9 @@ void EndServeur() {
     fclose(fichier_log);
     fflush(stdout);
     fflush(stdin);
-    exit(EXIT_FAILURE);
     close_all_clients();
     printf(RESET);
     fflush(stdout);
     fflush(stdin);
-    exit(0);
+    exit(EXIT_FAILURE);
 }
