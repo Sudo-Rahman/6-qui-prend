@@ -106,5 +106,11 @@ void jeu_play(Jeu *jeu);
 
 void EndServeur();
 
+/**
+ * @details Fonction de gestion des signaux du programme
+ * @param signal_recu
+ */
+void GestionSignauxServeur(int signal_recu);
+
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H

@@ -22,6 +22,7 @@ int nb_client = 0;
 int serveur_socket;
 
 struct sockaddr_in serveur_addr = {0};
+Jeu jeu;
 
 FILE *fichier_log;
 char date[40];
@@ -36,7 +37,7 @@ int main(int argc, char **argv) {
     srand(time(NULL));
 
     //Recuperation du dossier ou l'utilisateur travail pour vérification
-    if (getcwd(pwd, sizeof(pwd)) == NULL){
+    if (getcwd(pwd, sizeof(pwd)) == NULL) {
         printf(BOLD_RED"IMPOSSIBLE DE TROUVER L'EMPLACEMENT DU DOSSIER ACTUEL\n"RESET);
         exit(EXIT_FAILURE);
     }
@@ -66,8 +67,8 @@ int main(int argc, char **argv) {
     fprintf(fichier_log, "***DEBUT DU JEU***\n");
 
     //GESTION DES SIGNAUX pour fermer le programme correctement
-    signal(SIGINT, GestionSignaux);
-    signal(SIGTERM, GestionSignaux);
+    signal(SIGINT, GestionSignauxServeur);
+    signal(SIGTERM, GestionSignauxServeur);
 
     if (argc == 2) {
         PORT = atoi(argv[1]);
@@ -109,7 +110,6 @@ int main(int argc, char **argv) {
     fprintf(fichier_log, "La partie commence.\n");
 
 
-    Jeu jeu;
     for (int i = 0; i < nb_client; i++) jeu.joueur[i] = clients[i]->joueur;
 
 
@@ -164,27 +164,49 @@ void jeu_play(Jeu *jeu) {
             pthread_join(threads[i], NULL);
 
         Joueur **joueurs = get_ordre_joueur_tour(jeu);
+
+
         for (int i = 0; i < nb_client; ++i) {
             int retour = ajoute_carte_au_plateau(jeu, joueurs[i]->carte_choisie);
+
             if (retour == 0) {
-                printf("joueur : %s ", clients[i]->pseudo);
+                printf("joueur : %s prend la ligne complète\n", clients[i]->pseudo);
             } else {
-                if (retour == -1) {
+                if (retour == -1 && isOver != 1) {
                     client *c;
                     for (int j = 0; j < nb_client; ++j) {
                         if (clients[j]->joueur == joueurs[i])
                             c = clients[j];
-
                     }
                     int ligne = carte_trop_petite(c);
                     place_carte_mini(jeu, ligne, c->joueur);
                 }
             }
+
+            if (jeu->joueur[i]->nb_penalite >= nb_TeteMax) {
+                printf(BOLD_YELLOW"***FIN DE LA PARTIE***\n"RESET);
+                send_all_joueurs(clients, nb_client, BOLD_YELLOW"***FIN DE LA PARTIE***\n"RESET);
+                send_all_joueurs(clients, nb_client, BOLD_YELLOW"***NOMBRE DE TETES MAXIMAL ATTEINT***\n"RESET);
+
+                printf(BOLD_YELLOW"***NOMBRE DE TETES MAXIMAL ATTEINT***\n"RESET);
+                fprintf(fichier_log, "***NOMBRE DE TETES MAXIMAL ATTEINT***\n");
+                printf("%s", AfficheNbTeteJoueurs(*jeu));
+                PrintTableau(*jeu);
+                jeu->joueur[i]->nb_defaite++;
+                isOver = 1; //Valeur qui nous fait sortir du WHILE
+                break;
+            }
+            send_all_joueurs(clients, nb_client, "----------------------------------\n");
+            fprintf(fichier_log, "---------------------------------------------------------------\n");
+            send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
         }
-        send_all_joueurs(clients, nb_client, "----------------------------------\n");
-        fprintf(fichier_log,"---------------------------------------------------------------\n");
-        send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
+        tour++; // Incrementation du tour des joueurs
+
+
+
         free(joueurs);
+
+
     }
 }
 
@@ -216,7 +238,7 @@ void *listen_joueurs() {
         strcpy(c->pseudo, buffer);
 
         printf("Connection réalisé avec le joueur %s\n", c->pseudo);
-        sprintf(message, "Vous avez rejoint le serveur, vous etes le joueur n°%u.", nb_client + 1);
+        sprintf(message, "Vous avez rejoint le serveur, vous êtes le joueur n°%u.", nb_client + 1);
         send(client_socket, message, strlen(message), 0);
 
         sprintf(message, "Le joueur : %s vient de se connecter.", c->pseudo);
@@ -277,47 +299,65 @@ int all_joueur_pret() {
 }
 
 void *listen_choix_carte_joueur(void *argv) {
-    client *c = (client *) argv;
-
-    char *message = (char *) malloc(1024 * sizeof(char));
 
 
-    sprintf(message + strlen(message), "\n%s choisissez une carte de votre jeu :\n", c->pseudo);
-    sprintf(message + strlen(message), "Vous possédez %d têtes:\n", c->joueur[c->numero_joueur].nb_penalite);
+    if (isOver != 1) {
+        client *c = (client *) argv;
+
+        char *message = (char *) malloc(1024 * sizeof(char));
 
 
-    send(c->socket, message, strlen(message), 0);
+        //AFFICHAGE DES INFOS DU JOUEUR
+        sprintf(message + strlen(message), BOLD_CYAN"\n\t*** ROUND [%d] ***\n"RESET, tour);
+        sprintf(message + strlen(message), BOLD_CYAN"\n\t*** MANCHE [%d] ***\n\n"RESET,
+                abs(getNbCarteUtilisableDuJoueur(jeu, (unsigned short) c->numero_joueur) - 10));
+        sprintf(message + strlen(message), BOLD_BLUE"Joueur %s, il vous reste %d cartes:\n"RESET, c->pseudo,
+                getNbCarteUtilisableDuJoueur(jeu, (unsigned short) c->numero_joueur));
+        sprintf(message + strlen(message), "Vous possedez %d tetes\n", c->joueur[c->numero_joueur].nb_penalite);
+        send(c->socket, message, strlen(message), 0);
+        strcpy(message, affiche_cartes_joueur(c->joueur));
+        send(c->socket, message, strlen(message), 0);
 
-    strcpy(message, affiche_cartes_joueur(c->joueur));
-    send(c->socket, message, strlen(message), 0);
+        //BOUCLE DE SAISIE DE LA CARTE
+        while (1) {
+            char *buffer = recv_client_data(c);
 
-    while (1) {
-        char *buffer = recv_client_data(c);
-
-        int nb = atoi(buffer);
-        if (nb == 0 || (nb > 10 || nb < 1)) {
-            strcpy(message, BOLD_YELLOW"Erreur : la carte indiquée n’existe pas."RESET);
-            send(c->socket, message, strlen(message), 0);
-            continue;
-        } else {
-            if (c->joueur->carte[nb - 1]->isUsed == 1) {
-                strcpy(message, BOLD_YELLOW"Cette carte a deja été utilisée, choisissez en une autre."RESET);
+            int nb = atoi(buffer);
+            if (nb == 0 || (nb > 10 || nb < 1)) {
+                strcpy(message, BOLD_YELLOW"Erreur : la carte indiquée n’existe pas\n"RESET);
                 send(c->socket, message, strlen(message), 0);
+                continue;
             } else {
-                c->joueur->carte[nb - 1]->isUsed = 1;
-                c->joueur->carte_choisie = c->joueur->carte[nb - 1];
+                if (c->joueur->carte[nb - 1]->isUsed == 1) {
+                    strcpy(message, BOLD_YELLOW"Cette carte a deja été utilisée, choisissez en une autre\n"RESET);
+                    send(c->socket, message, strlen(message), 0);
+                } else {
+                    c->joueur->carte[nb - 1]->isUsed = 1;
+                    c->joueur->carte_choisie = c->joueur->carte[nb - 1];
 
-                printf("Le joueur %s pose sa carte %d > [%d - %d]\n", c->pseudo, nb - 1,
-                       c->joueur->carte[nb - 1]->Numero, c->joueur->carte[nb - 1]->Tete);
-                fprintf(fichier_log, "Le joueur %s pose sa carte %d > [%d - %d] - Possède %d têtes\n", c->pseudo, nb - 1,
-                        c->joueur->carte[nb - 1]->Numero, c->joueur->carte[nb - 1]->Tete, c->joueur[c->numero_joueur].nb_penalite);
-                break;
+                    printf("Le joueur %s pose sa carte %d > [%d - %d]\n", c->pseudo, nb - 1,
+                           c->joueur->carte[nb - 1]->Numero, c->joueur->carte[nb - 1]->Tete);
+                    fprintf(fichier_log, "Le joueur %s pose sa carte %d > [%d - %d] - Possède %d têtes\n", c->pseudo,
+                            nb - 1, c->joueur->carte[nb - 1]->Numero, c->joueur->carte[nb - 1]->Tete,
+                            c->joueur[c->numero_joueur].nb_penalite);
+                    break;
+                }
             }
-        }
-        free(buffer);
+            free(buffer);
 
+        }
+
+        //Si joueur n'a pas de carte, on lui en redonnne 10
+        if (getNbCarteUtilisableDuJoueur(jeu, c->numero_joueur) == 0) {
+            distribution_carte_joueur(&jeu, jeu.joueur[c->numero_joueur]);
+            sprintf(message, "Le joueur %s reçoit 10 cartes\n", c->pseudo);
+            send(c->socket, message, strlen(message), 0);
+            printf("Le joueur %s reçoit 10 cartes", c->pseudo);
+        }
+
+        free(message);
     }
-    free(message);
+
 
 }
 
@@ -357,11 +397,17 @@ int carte_trop_petite(client *c) {
     char *message = BOLD_MAGENTA"Vous avez posé la carte la plus petite du plateau\n"
                     "Quelle rangée voulez vous prendre [1-4] ?\n"RESET;
 
-
     send(c->socket, message, strlen(message), 0);
-    int nb = 10;
+    char *buff = recv_client_data(c);
+    int nb = atoi(buff);
+
+    if (nb < 1 || nb > 4) {
+        strcpy(message, BOLD_YELLOW"Erreur, vous devez entrer une ligne entre 1 et 4\n"RESET);
+        send(c->socket, message, strlen(message), 0);
+    }
+
     while (nb < 1 || nb > 4) {
-        char *buff = recv_client_data(c);
+        buff = recv_client_data(c);
         nb = atoi(buff);
 
         if (nb < 1 || nb > 4) {
@@ -375,8 +421,28 @@ int carte_trop_petite(client *c) {
     return nb - 1;
 }
 
-void EndServeur()
-{
+void GestionSignauxServeur(int signal_recu) {
+    switch (signal_recu) {
+
+        //SIGNAL CTRL + C
+        case SIGINT:
+            printf(BOLD_YELLOW"\nPOUR ARRETER LE JEU, APPUYER SUR X\n"RESET);
+            EndServeur();
+            break;
+
+            //SIGNAL POUR ARRETER PROGRAMME
+        case SIGTERM:
+            printf(BOLD_YELLOW"\nSIGNAL SIGTERM RECU\n"RESET);
+            EndServeur();
+            break;
+
+        default:
+            printf(BOLD_YELLOW"\nSIGNAL RECU > %d\n"RESET, signal_recu);
+            break;
+    }
+}
+
+void EndServeur() {
     printf(BOLD_YELLOW"LA PARTIE A ÉTÉ INTERROMPU"RESET);
     close_all_clients();
     fprintf(fichier_log, "\n***FIN***\n");

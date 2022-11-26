@@ -13,7 +13,6 @@
 #include <math.h>
 #include "Color.h"
 
-
 #define MAX_JOUEURS 10
 #define MIN_JOUEURS 2
 
@@ -35,7 +34,7 @@ typedef struct Jeu {
     Carte *liste_carte[104];
 } Jeu;
 
-unsigned int isOver = 0, tour = 1, nb_Joueur = 0, nb_Partie = 0, nb_TeteMax = 66, nb_MancheMax = 900;
+unsigned int isOver = 0, tour = 1, nb_Joueur = 0, nb_Partie = 0, nb_TeteMax = 10, nb_MancheMax = 900;
 unsigned short nextPartie = 0;
 struct timeval begin, end; // Pour calculer la durée d'une partie
 double duree_total = 0;
@@ -370,10 +369,30 @@ unsigned char get_pos_carte_derniere_ligne(Jeu *jeu, int ligne) {
 
 char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte) {
     char pos = get_pos_carte_mini(jeu, carte->Numero);
-    if (pos == -1)
-        return -1;
+    if (pos == -1) return -1;
+
     if (pos % 6 == 4) {
-        return 0;
+        printf("LIGNE COMPLETE \n");
+
+        //On remet les cartes de la ligne concernées du plateau dans la pioche pour ne pas manquer de carte
+        for (int carteDansPioche = 0; carteDansPioche < 5; carteDansPioche++) {
+            unsigned short CarteAMettreDansPioche = jeu->plateau[pos / 6][carteDansPioche].Numero;
+            jeu->liste_carte[CarteAMettreDansPioche]->isPicked = 0;
+            jeu->liste_carte[CarteAMettreDansPioche]->isUsed = 0;
+            printf("%d dans la pioche\n", jeu->plateau[pos / 6][carteDansPioche].Numero);
+        }
+
+
+        //Parcours pour reset le plateau à la colonne en question
+        for (int boucleResetLigne = 1; boucleResetLigne < 6; boucleResetLigne++) {
+            Carte carte_0 = {0, 0, 0, 0};
+            jeu->plateau[pos / 6][boucleResetLigne] = carte_0;
+        }
+
+        jeu->plateau[pos / 6][0] = *carte;
+
+
+
     } else {
         jeu->plateau[pos / 6][(pos % 6) + 1] = *carte;
         return 1;
@@ -572,11 +591,9 @@ char *RecapRegle(Jeu jeu) {
 }
 
 char *AfficheNbTeteJoueurs(Jeu jeu) {
-
     char *tmp = malloc(45 * nb_Joueur * sizeof(char));
-
     for (short i = 0; i < nb_Joueur; i++) {
-        sprintf(tmp + strlen(tmp), BOLD_CYAN"Le joueur %d possède %d têtes \n"RESET, i, jeu.joueur[i]->nb_penalite);
+        sprintf(tmp + strlen(tmp), BOLD_CYAN"Vous possedez %d têtes \n"RESET, i, jeu.joueur[i]->nb_penalite);
         fprintf(fichier_log, "ROUND [%d] > Le joueur %d possède %d têtes\n", tour, i, jeu.joueur[i]->nb_penalite);
     }
     fprintf(fichier_log, "\n");
@@ -687,31 +704,5 @@ char *AskNombreUser(int min, int max) {
     return nombre_toStd;
 }
 
-
-/**
- * @details Fonction de gestion des signaux du programme
- * @param signal_recu
- */
-void GestionSignaux(int signal_recu) {
-
-    switch (signal_recu) {
-
-        //SIGNAL CTRL + C
-        case SIGINT:
-            printf(BOLD_YELLOW"\nPOUR ARRETER LE JEU, APPUYER SUR X\n"RESET);
-            ForceFinDuJeu();
-            break;
-
-            //SIGNAL POUR ARRETER PROGRAMME
-        case SIGTERM:
-            printf(BOLD_YELLOW"\nSIGNAL SIGTERM RECU\n"RESET);
-            ForceFinDuJeu();
-            break;
-
-        default:
-            printf(BOLD_YELLOW"\nSIGNAL RECU > %d\n"RESET, signal_recu);
-            break;
-    }
-}
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_JEU_H
