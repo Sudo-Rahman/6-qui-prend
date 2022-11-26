@@ -49,13 +49,13 @@ char nom_fichier[256];
  * @details Fonction qui permet d'initialiser le jeu
  * @param jeu
  */
-void initJeu(Jeu *jeu);
+void init_jeu(Jeu *jeu);
 
 /**
  * @details Fonction pour créer un plateau de carte
  * @return Un tableau de carte représentant le plateau
  */
-Carte **creePlateau();
+Carte **cree_plateau();
 
 
 /**
@@ -261,10 +261,10 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu);
 void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j);
 
 
-void initJeu(Jeu *jeu)
+void init_jeu(Jeu *jeu)
 {
 
-    jeu->plateau = creePlateau(); // Création du plateau de carte 4*6
+    jeu->plateau = cree_plateau(); // Création du plateau de carte 4*6
 
     //Creation des 104 cartes avec numéro de tête random
     for (int i = 0; i < 104; i++) jeu->liste_carte[i] = create_carte(i + 1);
@@ -289,7 +289,7 @@ void resetJeu(Jeu *jeu)
 {
     isOver = 0;
     tour = 1;
-    initJeu(jeu);
+    init_jeu(jeu);
 }
 
 void freeJeu(Jeu jeu)

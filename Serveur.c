@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < nb_client; i++) jeu.joueur[i] = clients[i]->joueur;
 
 
-    initJeu(&jeu);
+    init_jeu(&jeu);
 
     send_all_joueurs(clients, nb_client, RecapRegle(jeu));
     send_all_joueurs(clients, nb_client, affiche_plateau(&jeu));
@@ -168,19 +168,21 @@ void jeu_play(Jeu *jeu) {
 
         for (int i = 0; i < nb_client; ++i) {
             int retour = ajoute_carte_au_plateau(jeu, joueurs[i]->carte_choisie);
+            if (retour == 0 || retour == -1)
+            {
+                client *c;
+                for (int j = 0; j < nb_client; ++j)
+                {
+                    if (clients[j]->joueur == joueurs[i])
+                        c = clients[j];
 
-            if (retour == 0) {
-                printf("joueur : %s prend la ligne complète\n", clients[i]->pseudo);
-            } else {
-                if (retour == -1 && isOver != 1) {
-                    client *c;
-                    for (int j = 0; j < nb_client; ++j) {
-                        if (clients[j]->joueur == joueurs[i])
-                            c = clients[j];
-                    }
-                    int ligne = carte_trop_petite(c);
-                    place_carte_mini(jeu, ligne, c->joueur);
                 }
+                int ligne = get_pos_carte_mini(jeu,joueurs[i]->carte_choisie->Numero)/6;
+                if (retour == -1)
+                    ligne = carte_trop_petite(c);
+                place_carte_si_trop_petite_ou_derniere_ligne(jeu, ligne, c->joueur);
+                printf("joueur : %s tete : %i", clients[i]->pseudo, c->joueur->nb_penalite);
+                fflush(stdout);
             }
 
             if (jeu->joueur[i]->nb_penalite >= nb_TeteMax) {
