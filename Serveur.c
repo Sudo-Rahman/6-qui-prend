@@ -160,8 +160,6 @@ void *joueur_pret(void *argv) {
 
     } else if (isOver == 3) {
 
-        printf("En att que y ou n\n");
-
         while (1) {
             char *buffer = recv_client_data(c);
             if (strcmp(buffer, "y") == 0 || strcmp(buffer, "Y") == 0) {
@@ -172,11 +170,9 @@ void *joueur_pret(void *argv) {
             } else if (strcmp(buffer, "n") == 0 || strcmp(buffer, "N") == 0) {
                 snprintf(message, 1024, BOLD_YELLOW"Le joueur %s à quitté"RESET, c->pseudo);
                 send_all_joueurs(clients, nb_client, message);
-                exit(0);
-                break;
+                EndServeur();
             } else {
                 printf(BOLD_RED"RECU [%s] taille %d\n"RESET, buffer, strlen(buffer));
-
             }
 
             free(buffer);
@@ -201,16 +197,16 @@ void jeu_play(Jeu *jeu) {
         Joueur **joueurs = get_ordre_joueur_tour(jeu);
 
 
+        //SI PARTIE N'EST PAS TERMINE
         if (isOver == 0) {
 
             for (int i = 0; i < nb_client; ++i) {
 
-
                 //Indiquer aux joueurs qui doit jouer
-                char *quiJoue = malloc(128 * sizeof(char));
-                snprintf(quiJoue, 128, "[INFO] - C'est au tour de ");
-                snprintf(quiJoue + strlen(quiJoue), 128, BOLD_MAGENTA"%s"RESET, clients[i]->pseudo);
-                snprintf(quiJoue + strlen(quiJoue), 128, " de jouer\n\n");
+                char *quiJoue = malloc(64 * sizeof(char));
+                snprintf(quiJoue, 64, "[INFO] - C'est au tour de ");
+                snprintf(quiJoue + strlen(quiJoue), 64, BOLD_MAGENTA"%s"RESET, clients[i]->pseudo);
+                snprintf(quiJoue + strlen(quiJoue), 64, " de jouer\n\n");
                 send_all_joueurs(clients, nb_client, quiJoue);
                 free(quiJoue);
 
@@ -238,8 +234,10 @@ void jeu_play(Jeu *jeu) {
                     printf(BOLD_YELLOW"***NOMBRE DE TETES MAXIMAL ATTEINT***\n"RESET);
                     fprintf(fichier_log, "***NOMBRE DE TETES MAXIMAL ATTEINT***\n");
                     printf("%s", AfficheNbTeteJoueurs(*jeu));
-                    PrintTableau(*jeu);
+                    PrintTableau(*jeu); // Dans le fichier log
+
                     jeu->joueur[i]->nb_defaite++;
+                    nb_Partie++;
                     isOver = 1; //Valeur qui nous fait sortir du WHILE
                     char *message = malloc(1024 * sizeof(char));
                     snprintf(message, 1024, "%s\n", Statistique(*jeu));
@@ -249,10 +247,7 @@ void jeu_play(Jeu *jeu) {
                     long microsecondes = end.tv_usec - begin.tv_usec;
                     double duree_partie = secondes + microsecondes * 1e-6; // Calcul du temps total en seconde
                     duree_total += duree_partie;
-                    printf("Durée de la partie [%d] > %.5f secondes\n", nb_Partie, duree_partie);
-                    fprintf(fichier_log, "Durée de la partie [%d] > %.5f secondes\n", nb_Partie, duree_partie);
-                    snprintf(message, 1024, "Durée de la partie [%d] > %.5f secondes\n", nb_Partie, duree_partie);
-                    send_all_joueurs(clients, nb_client, message);
+                    AfficheTempsJeu(duree_partie);
                     free(message);
                     break;
                 }
@@ -262,7 +257,6 @@ void jeu_play(Jeu *jeu) {
             }
             tour++; // Incrementation du tour des joueurs
 
-
             //Cas ou nb de tour max atteint
             if (tour >= nb_MancheMax) {
                 printf(BOLD_YELLOW"***FIN DE LA PARTIE***\n"RESET);
@@ -271,22 +265,19 @@ void jeu_play(Jeu *jeu) {
                 printf(BOLD_YELLOW"***NOMBRE DE TOURS MAXIMAL ATTEINT***\n"RESET);
                 fprintf(fichier_log, "***NOMBRE DE TOURS MAXIMAL ATTEINT***\n");
                 printf("%s", AfficheNbTeteJoueurs(*jeu));
-                PrintTableau(*jeu);
+                PrintTableau(*jeu); // Dans le fichier log
                 char *message = malloc(1024 * sizeof(char));
-                snprintf(message, 1024, "%s\n", Statistique(*jeu));
+                snprintf(message, 1024, "\n%s\n", Statistique(*jeu));
                 send_all_joueurs(clients, nb_client, message);
-
                 gettimeofday(&end, 0); // Initialisation du temps quand jeu est terminée
                 long secondes = end.tv_sec - begin.tv_sec;
                 long microsecondes = end.tv_usec - begin.tv_usec;
                 double duree_partie = secondes + microsecondes * 1e-6; // Calcul du temps total en seconde
                 duree_total += duree_partie;
-                printf("Durée de la partie [%d] > %.5f secondes\n", nb_Partie, duree_partie);
-                fprintf(fichier_log, "Durée de la partie [%d] > %.5f secondes\n", nb_Partie, duree_partie);
-                snprintf(message, 1024, "Durée de la partie [%d] > %.5f secondes\n", nb_Partie, duree_partie);
-                send_all_joueurs(clients, nb_client, message);
-                free(message);
+                AfficheTempsJeu(duree_partie);
+                nb_Partie++;
                 isOver = 1; //Valeur qui nous fait sortir du WHILE
+                free(message);
                 break;
             }
 
@@ -297,10 +288,8 @@ void jeu_play(Jeu *jeu) {
 
             //Cas ou partie est finie
         else {
-            nb_Partie++;
             ProcedureFinPartie(isOver);
         }
-
 
     }
 }
@@ -312,7 +301,6 @@ void *listen_joueurs() {
         struct sockaddr_in client_addr = {0};
 
         int taille = (int) sizeof(serveur_addr);
-
         int client_socket = accept(serveur_socket, (struct sockaddr *) &serveur_addr, (socklen_t *) &taille);
 
         if (all_joueur_pret()) {
@@ -352,12 +340,10 @@ void *listen_joueurs() {
             break;
         }
 
-
         free(buffer);
         free(message);
 
         pthread_t pthread;
-
         pthread_create(&pthread, NULL, &joueur_pret, (void *) c);
     }
 
@@ -395,12 +381,9 @@ int all_joueur_pret() {
 
 void *listen_choix_carte_joueur(void *argv) {
 
-
     if (isOver == 0) {
         client *c = (client *) argv;
-
         char *message = (char *) malloc(1024 * sizeof(char));
-
 
         //AFFICHAGE DES INFOS DU JOUEUR
         snprintf(message + strlen(message), 1024, BOLD_CYAN"\n\t*** ROUND [%d] ***\n"RESET, tour);
@@ -453,22 +436,15 @@ void *listen_choix_carte_joueur(void *argv) {
         free(message);
     }
 
-
 }
 
 void client_quit(client *c) {
     char *mess = (char *) malloc(1024 * sizeof(char));
-    snprintf(mess, 1024, BOLD_YELLOW"Le client %s a quitté la partie\nLA PARTIE A ÉTÉ INTERROMPU\n"RESET, c->pseudo);
+    snprintf(mess, 1024, BOLD_YELLOW"Le client %s a quitté la partie\n"RESET, c->pseudo);
     printf("%s\n", mess);
-    fprintf(fichier_log, "Le client : %s a quitté la partie\nLA PARTIE A ÉTÉ INTERROMPU\n", c->pseudo);
     send_all_joueurs(clients, nb_client, mess);
-    close_all_clients();
-    fprintf(fichier_log, "\n***FIN***\n");
-    fclose(fichier_log);
     free(mess);
-    fflush(stdout);
-    fflush(stdin);
-    exit(EXIT_FAILURE);
+    EndServeur();
 }
 
 void close_all_clients() {
@@ -539,44 +515,58 @@ void GestionSignauxServeur(int signal_recu) {
     }
 }
 
+void AfficheTempsJeu(double duree) {
+    char *message = malloc(512 * sizeof(char));
+    printf("Durée de la partie [%d] > %.5f secondes\n", nb_Partie, duree);
+    printf("Temps de jeu total :  %.5f secondes\n", duree_total);
+    fprintf(fichier_log, "Durée de la partie [%d] > %.5f secondes\n", nb_Partie, duree);
+    fprintf(fichier_log, "Temps de jeu total :  %.5f secondes\n", duree_total);
+    snprintf(message, 1024, "Durée de la partie [%d] > %.5f secondes\n", nb_Partie, duree);
+    snprintf(message + strlen(message), 1024, "Temps de jeu total :  %.5f secondes\n", duree_total);
+    send_all_joueurs(clients, nb_client, message);
+    free(message);
+}
+
 void ProcedureFinPartie(int etat) {
 
     switch (etat) {
 
         case 1:
-            //On remet les clients en mode pas pret
+            //On remet les clients en mode pas prêt
             for (int i = 0; i < nb_client; i++) {
                 printf("%s pas prêt\n", clients[i]->pseudo);
                 clients[i]->pret = 0;
             }
 
-            char *message1 = malloc(64 * sizeof(char));
-            snprintf(message1, 64, BOLD_MAGENTA"Voulez vous refaire une partie ? [y] / [n]\n"RESET);
-            send_all_joueurs(clients, nb_client, message1);
-            free(message1);
-            isOver = 2; // Attente que les joueurs se mettent pret à nouveau
+//            char *message1 = malloc(64 * sizeof(char));
+//            snprintf(message1, 64, BOLD_MAGENTA"Voulez-vous refaire une partie ? [y] / [n]\n"RESET);
+//            send_all_joueurs(clients, nb_client, message1);
+//            free(message1);
+            isOver = 2; // Attente que les joueurs se mettent prêt à nouveau
             break;
 
         case 2:
-            printf("Création Threads ecoute...\n");
-            pthread_t pthread;
-            pthread_create(&pthread, NULL, &joueur_pret, (void *) clients[nb_client]);
+//            printf("Création Threads ecoute...\n");
+//            pthread_t pthread;
+//            pthread_create(&pthread, NULL, &joueur_pret, (void *) clients[nb_client]);
             isOver = 3;
             break;
 
         case 3:
-            printf("En attente des joueurs...\n");
-            send_all_joueurs(clients, nb_client, "En attente des joueurs...\n");
+//            printf("En attente des joueurs...\n");
+//            send_all_joueurs(clients, nb_client, "En attente des joueurs...\n");
 //            while (all_joueur_pret() == 0) {
 //
 //            }
-            char *message3 = malloc(64 * sizeof(char));
-            snprintf(message3, 128, BOLD_GREEN"Tous les joueurs sont prêts, la partie %d va commencer...\n"RESET,
-                     nb_Partie);
-            send_all_joueurs(clients, nb_client, message3);
-            free(message3);
+//            char *message3 = malloc(128 * sizeof(char));
+//            snprintf(message3, 128, BOLD_GREEN"Tous les joueurs sont prêts, la partie %d va commencer...\n"RESET,
+//                     nb_Partie);
+//            send_all_joueurs(clients, nb_client, message3);
+            send_all_joueurs(clients, nb_client,
+                             BOLD_GREEN"Tous les joueurs sont prêts, la partie va commencer...\n"RESET);
+//            free(message3);
             init_jeu(&jeu);
-            isOver = 0;
+            resetJeu();
             break;
     }
 
@@ -584,16 +574,13 @@ void ProcedureFinPartie(int etat) {
 }
 
 void EndServeur() {
-    printf(BOLD_YELLOW"LA PARTIE A ÉTÉ INTERROMPU"RESET);
-    printf(BOLD_WHITE"Le résumé de la partie est disponible dans le dossier des logs\n"RESET);
+    printf(BOLD_YELLOW"LA PARTIE A ÉTÉ INTERROMPU\n"RESET);
+    printf(BOLD_WHITE"LE RÉSUMÉ DE LA PARTIE EST DISPONIBLE DANS LE DOSSIER DES LOGS\n"RESET);
     close_all_clients();
     fprintf(fichier_log, "\n***FIN***\n");
     fclose(fichier_log);
     fflush(stdout);
     fflush(stdin);
-    close_all_clients();
     printf(RESET);
-    fflush(stdout);
-    fflush(stdin);
     exit(EXIT_SUCCESS);
 }
