@@ -47,6 +47,12 @@ int main(int argc, char **argv) {
     signal(SIGINT, GestionSignauxClient);
     signal(SIGTERM, GestionSignauxClient);
 
+
+    printf(BOLD_WHITE"BIENVENUE SUR LE JEU "RESET);
+    printf(BOLD_GREEN"6"RESET);
+    printf(BOLD_CYAN" QUI"RESET);
+    printf(BOLD_MAGENTA" PREND!\n\n"RESET);
+
     printf("Choisissez votre pseudo : ");
 
     char pseudo[64];

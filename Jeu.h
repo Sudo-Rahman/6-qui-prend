@@ -645,6 +645,44 @@ int MoyenneDesTetes(Jeu jeu) {
     return somme / nb_Joueur;
 }
 
+int AskNombreUser(int min, int max) {
+    char str[16] = "";
+    scanf("%s", str);
+    if (strlen(str) > 16) str[0] = '\0'; //Gestion cas ou nombre est trop grand pour pas crash le programme
+
+    //SI utilisateur veut arreter le jeu en appuyant sur x
+    if (strcmp(str, "x") == 0 || strcmp(str, "X") == 0) {
+        printf(BOLD_RED"ARRET DU JEU...\n"RESET);
+        ForceFinDuJeu();
+    }
+    int nombre = atoi(str);//Conversion de la chaine de caractère en nombre entier pour savoir le nombre entré
+    while (nombre < min || nombre > max) {
+        printf(BOLD_RED"La valeur doit être comprise entre [%d-%d], vous avez entré : %d\n>"RESET, min, max, nombre);
+        scanf("%s", str);
+        if (strlen(str) > 16) str[0] = '\0';
+        if (strcmp(str, "x") == 0 || strcmp(str, "X") == 0) {
+            printf(BOLD_RED"ARRET DU JEU...\n"RESET);
+            ForceFinDuJeu();
+        }
+        nombre = atoi(str);
+        fflush(stdin);
+        fflush(stdout);
+    }
+
+    fflush(stdin);
+    fflush(stdout);
+    return nombre;
+}
+
+void ForceFinDuJeu() {
+    printf(RESET);
+    isOver = 1;
+    nextPartie = 1;
+    fprintf(fichier_log, "\n***LE JEU A ETE ARRETE***\n");
+    fclose(fichier_log);
+    exit(EXIT_SUCCESS);
+}
+
 
 /**
  * @details Fonction pour afficher le temps de jeu aux joueurs et dans le fichier log

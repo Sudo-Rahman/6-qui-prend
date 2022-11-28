@@ -55,6 +55,12 @@ int main(int argc, char **argv) {
         }
     }
 
+    printf(BOLD_WHITE"BIENVENUE SUR LE JEU "RESET);
+    printf(BOLD_GREEN"6"RESET);
+    printf(BOLD_CYAN" QUI"RESET);
+    printf(BOLD_MAGENTA" PREND!\n"RESET);
+
+
     //Creation du nom du fichier LOG avec la date du jour + heure pour savoir de quand date la partie
     time_t heure_local = time(NULL);
     struct tm *tm = localtime(&heure_local);
@@ -102,18 +108,32 @@ int main(int argc, char **argv) {
 
     listen(serveur_socket, 5);
 
+
+    printf(BOLD_HIGH_WHITE"\nVoulez-vous changer les règles du jeu ? [y] / [n]\n>"RESET);
+    char answer;
+    scanf(" %c", &answer);
+    if (answer == 'y' || answer == 'Y' || answer == '\n') {
+        printf(BOLD_HIGH_WHITE"Définissez le nombre de têtes maximal\n>"RESET);
+        nb_TeteMax = AskNombreUser(0, 10000);
+        printf(BOLD_HIGH_WHITE"Définissez le nombre de tours maximal\n>"RESET);
+        nb_MancheMax = AskNombreUser(0, 10000);
+    } else {
+        nb_TeteMax = 66;
+        nb_MancheMax = 999;
+    }
+
+    //Lancement du thread qui gere les connections des joueurs.
     pthread_t thread;
-
-    // lancement du thread qui gere les connections des joueurs.
     pthread_create(&thread, NULL, &listen_joueurs, NULL);
-
 
     while (all_joueur_pret() == 0) {}
 
-    send_all_joueurs(clients, nb_client, BOLD_GREEN"\nTous les joueurs sont pret la partie va commencer...\n"RESET);
+    send_all_joueurs(clients, nb_client, BOLD_GREEN"\nTous les joueurs sont prêt la partie va commencer...\n"RESET);
     printf(BOLD_GREEN"La partie va commencer...\n"RESET);
     fprintf(fichier_log, "La partie commence.\n");
 
+    fprintf(fichier_log, "Nombre de manches maximal : %d\n", nb_MancheMax);
+    fprintf(fichier_log, "Nombre de têtes maximal : %d\n\n", nb_TeteMax);
 
     for (int i = 0; i < nb_client; i++) jeu.joueur[i] = clients[i]->joueur;
 
