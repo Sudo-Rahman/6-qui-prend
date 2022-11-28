@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 
     // Boucle pour envoyer des messages au serveur
     while (1) {
-        char *message = (char *) malloc(2048);
+        char *message = (char *) malloc(512);
         scanf("%s", message);
         send(sock, message, strlen(message), 0);
         fflush(stdin);
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 
 void *listen_all_time(void *argv) {
     while (1) {
-        char buffer[1024];
+        char buffer[2048];
         int n = 0;
 
         if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) == 0) {

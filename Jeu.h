@@ -36,9 +36,8 @@ typedef struct Jeu
     Carte *liste_carte[104];
 } Jeu;
 
-unsigned int isOver = 0, tour = 1, nb_Joueur = 0, nb_Partie = 0, nb_TeteMax = 66, nb_MancheMax = 900;
+unsigned int isOver = 0, tour = 1, nb_Joueur = 0, nb_Partie = 0, nb_TeteMax = 1, nb_MancheMax = 900;
 unsigned short nextPartie = 0;
-struct timeval begin, end; // Pour calculer la durée d'une partie
 double duree_total = 0;
 
 FILE *fichier_log;
@@ -269,8 +268,12 @@ void init_jeu(Jeu *jeu)
     //Creation des 104 cartes avec numéro de tête random
     for (int i = 0; i < 104; i++) jeu->liste_carte[i] = create_carte(i + 1);
 
-    //SI c'est la premiere partie, on initialise le nombre de défaites à 0.
-    if (nb_Partie == 0) for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_defaite = 0;
+
+    if(nb_Partie==0)
+    {
+        //SI c'est la premiere partie, on initialise le nombre de défaites à 0.
+        if (nb_Partie == 0) for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_defaite = 0;
+    }
 
     //Nombre de têtes à 0 vu que le jeu commence
     for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_penalite = 0;
@@ -282,6 +285,7 @@ void init_jeu(Jeu *jeu)
     //Carte de la premiere colonne du plateau distribué
     creation_premiere_colonne_plateau(jeu);
     distribution_carte_joueurs(jeu);
+    affiche_plateau(jeu);
 }
 
 
@@ -707,6 +711,8 @@ int MoyenneDesTetes(Jeu jeu)
     for (int i = 0; i < nb_Joueur; i++) somme += jeu.joueur[i]->nb_penalite;
     return somme / nb_Joueur;
 }
+
+void ProcedureFinPartie(int etat);
 
 void ForceFinDuJeu()
 {
