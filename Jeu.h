@@ -33,7 +33,7 @@ typedef struct Jeu {
     Carte *liste_carte[104];
 } Jeu;
 
-unsigned int isOver = 0, tour = 1, nb_Joueur = 0, nb_Partie = 0, nb_TeteMax = 1, nb_MancheMax = 900;
+unsigned int isOver = 0, tour = 1, nb_Joueur = 0, nb_Partie = 0, nb_TeteMax = 66, nb_MancheMax = 999;
 unsigned short nextPartie = 0;
 double duree_total = 0;
 
@@ -536,21 +536,20 @@ char *Statistique(Jeu jeu) {
     char *tmp = malloc(1024 * sizeof(char));
 
     //DANS TERMINAL
-    snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"\t[STATISTIQUES]\n"RESET);
-    snprintf(tmp + strlen(tmp), 1024, "Nombre de parties joué : %d\n", nb_Partie);
+    snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"\n\t[STATISTIQUES]\n"RESET);
+    snprintf(tmp + strlen(tmp), 1024, "\nNombre de parties joué : %d\n", nb_Partie);
     snprintf(tmp + strlen(tmp), 1024, "Moyenne des têtes obtenues : %d\n", MoyenneDesTetes(jeu));
     snprintf(tmp + strlen(tmp), 1024, "%s", AfficheNbTeteJoueurs(jeu));
-    snprintf(tmp + strlen(tmp), 1024, "%s", MinEtMaxDefaite(jeu));
 
 
     //DANS FICHIER
-    fprintf(fichier_log, "\t[STATISTIQUES]\n");
-    fprintf(fichier_log, "Nombre de parties joué : %d\n", nb_Partie);
+    fprintf(fichier_log, "\n\t[STATISTIQUES]\n");
+    fprintf(fichier_log, "\nNombre de parties joué : %d\n", nb_Partie);
     fprintf(fichier_log, "Moyenne des têtes obtenues : %d\n", MoyenneDesTetes(jeu));
     fprintf(fichier_log, "%s\n", AfficheNbTeteJoueurs(jeu));
-    fprintf(fichier_log, "%s", MinEtMaxDefaite(jeu));
+    snprintf(tmp + strlen(tmp), 1024, "%s", MinEtMaxDefaite(jeu));
 
-    printf("%s", MinEtMaxDefaite(jeu));
+
     char *res = malloc(strlen(tmp) * sizeof(char));
     strcpy(res, tmp);
     free(tmp);
@@ -577,11 +576,9 @@ char *RecapRegle(Jeu jeu) {
 }
 
 char *AfficheNbTeteJoueurs(Jeu jeu) {
-
     char *tmp = malloc(60 * nb_Joueur * sizeof(char));
-
     for (short i = 0; i < nb_Joueur; i++) {
-        snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"Le joueur %d possède %d têtes \n"RESET, i,
+        snprintf(tmp + strlen(tmp), 1024, "Le joueur %d possède %d têtes \n", i,
                  jeu.joueur[i]->nb_penalite);
         fprintf(fichier_log, "ROUND [%d] > Le joueur %d possède %d têtes\n", tour, i, jeu.joueur[i]->nb_penalite);
     }
@@ -632,6 +629,9 @@ char *MinEtMaxDefaite(Jeu jeu) {
             min);
     fprintf(fichier_log, "Le joueur ayant obtenu le plus de défaite est le joueur %d avec %d défaites\n", imax,
             max);
+
+    printf("Le joueur ayant obtenue le moins de défaite est le joueur %d avec %d défaites\n", imin, min);
+    printf("Le joueur ayant obtenu le plus de défaite est le joueur %d avec %d défaites\n", imax, max);
 
     char *res = malloc(strlen(tmp) * sizeof(char));
     strcpy(res, tmp);
@@ -689,6 +689,12 @@ void ForceFinDuJeu() {
  * @param duree
  */
 void AfficheTempsJeu(double duree);
+
+
+/**
+ * @details Fonction utilisée par le serveur pour changer les réglages du jeu
+ */
+void ChangeLimiteJeu();
 
 void ProcedureFinPartie(int etat);
 

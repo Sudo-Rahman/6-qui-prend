@@ -8,6 +8,7 @@
 #include <pthread.h>
 
 int sock;
+char pseudo[64];
 
 //TODO Bug quand le client doit entrer une valeur genre 'pret' mais qu'il rentre autre chose
 
@@ -55,7 +56,6 @@ int main(int argc, char **argv) {
 
     printf("Choisissez votre pseudo : ");
 
-    char pseudo[64];
     scanf("%s", pseudo);
     fflush(stdin);
     fflush(stdout);

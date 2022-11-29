@@ -44,14 +44,12 @@ void GestionSignauxClient(int signal_recu) {
         case SIGINT:
             printf(BOLD_MAGENTA"\nVous avez quitté la partie\nAu revoir\n"RESET);
             exit(0);
-            break;
 
             //SIGNAL POUR ARRETER PROGRAMME
         case SIGTERM:
             printf(BOLD_YELLOW"\nSIGNAL SIGTERM RECU\n"RESET);
             printf(BOLD_MAGENTA"\nVous avez quitté la partie\nAu revoir\n"RESET);
             exit(0);
-            break;
 
         default:
             printf(BOLD_YELLOW"\nSIGNAL RECU > %d\n"RESET, signal_recu);

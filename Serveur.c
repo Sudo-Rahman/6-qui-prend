@@ -109,31 +109,18 @@ int main(int argc, char **argv) {
     listen(serveur_socket, 5);
 
 
-    printf(BOLD_HIGH_WHITE"\nVoulez-vous changer les règles du jeu ? [y] / [n]\n>"RESET);
-    char answer;
-    scanf(" %c", &answer);
-    if (answer == 'y' || answer == 'Y' || answer == '\n') {
-        printf(BOLD_HIGH_WHITE"Définissez le nombre de têtes maximal\n>"RESET);
-        nb_TeteMax = AskNombreUser(0, 10000);
-        printf(BOLD_HIGH_WHITE"Définissez le nombre de tours maximal\n>"RESET);
-        nb_MancheMax = AskNombreUser(0, 10000);
-    } else {
-        nb_TeteMax = 66;
-        nb_MancheMax = 999;
-    }
 
     //Lancement du thread qui gere les connections des joueurs.
     pthread_t thread;
     pthread_create(&thread, NULL, &listen_joueurs, NULL);
+
+    ChangeLimiteJeu();
 
     while (all_joueur_pret() == 0) {}
 
     send_all_joueurs(clients, nb_client, BOLD_GREEN"\nTous les joueurs sont prêt la partie va commencer...\n"RESET);
     printf(BOLD_GREEN"La partie va commencer...\n"RESET);
     fprintf(fichier_log, "La partie commence.\n");
-
-    fprintf(fichier_log, "Nombre de manches maximal : %d\n", nb_MancheMax);
-    fprintf(fichier_log, "Nombre de têtes maximal : %d\n\n", nb_TeteMax);
 
     for (int i = 0; i < nb_client; i++) jeu.joueur[i] = clients[i]->joueur;
 
@@ -222,6 +209,9 @@ void jeu_play(Jeu *jeu) {
 
             for (int i = 0; i < nb_client; ++i) {
 
+                send_all_joueurs(clients, nb_client, "----------------------------------\n");
+                fprintf(fichier_log, "---------------------------------------------------------------\n");
+
                 //Indiquer aux joueurs qui doit jouer
                 char *quiJoue = malloc(64 * sizeof(char));
                 snprintf(quiJoue, 64, "[INFO] - C'est au tour de ");
@@ -248,11 +238,17 @@ void jeu_play(Jeu *jeu) {
                 }
 
                 if (jeu->joueur[i]->nb_penalite >= nb_TeteMax) {
-                    printf(BOLD_YELLOW"***FIN DE LA PARTIE***\n"RESET);
-                    send_all_joueurs(clients, nb_client, BOLD_YELLOW"***FIN DE LA PARTIE***\n"RESET);
-                    send_all_joueurs(clients, nb_client, BOLD_YELLOW"***NOMBRE DE TETES MAXIMAL ATTEINT***\n"RESET);
+
+                    //Au Serveur
+                    printf(BOLD_YELLOW"\n***FIN DE LA PARTIE***\n"RESET);
                     printf(BOLD_YELLOW"***NOMBRE DE TETES MAXIMAL ATTEINT***\n"RESET);
+                    //Aux joueurs
+                    send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***FIN DE LA PARTIE***\n"RESET);
+                    send_all_joueurs(clients, nb_client, BOLD_YELLOW"***NOMBRE DE TETES MAXIMAL ATTEINT***\n"RESET);
+                    //Dans fichier LOG
+                    fprintf(fichier_log, BOLD_YELLOW"\n***FIN DE LA PARTIE***\n"RESET);
                     fprintf(fichier_log, "***NOMBRE DE TETES MAXIMAL ATTEINT***\n");
+
                     printf("%s", AfficheNbTeteJoueurs(*jeu));
                     PrintTableau(*jeu); // Dans le fichier log
 
@@ -271,21 +267,26 @@ void jeu_play(Jeu *jeu) {
                     free(message);
                     break;
                 }
-                send_all_joueurs(clients, nb_client, "----------------------------------\n");
-                fprintf(fichier_log, "---------------------------------------------------------------\n");
+
                 send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
             }
             tour++; // Incrementation du tour des joueurs
 
             //Cas ou nb de tour max atteint
             if (tour >= nb_MancheMax) {
-                printf(BOLD_YELLOW"***FIN DE LA PARTIE***\n"RESET);
-                send_all_joueurs(clients, nb_client, BOLD_YELLOW"***FIN DE LA PARTIE***\n"RESET);
-                send_all_joueurs(clients, nb_client, BOLD_YELLOW"***NOMBRE DE TOURS MAXIMAL ATTEINT***\n"RESET);
+                //Au serveur
+                printf(BOLD_YELLOW"\n***FIN DE LA PARTIE***\n"RESET);
                 printf(BOLD_YELLOW"***NOMBRE DE TOURS MAXIMAL ATTEINT***\n"RESET);
+                //Aux joueurs
+                send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***FIN DE LA PARTIE***\n"RESET);
+                send_all_joueurs(clients, nb_client, BOLD_YELLOW"***NOMBRE DE TOURS MAXIMAL ATTEINT***\n"RESET);
+                //Dans fichier LOG
+                fprintf(fichier_log, BOLD_YELLOW"\n***FIN DE LA PARTIE***\n"RESET);
                 fprintf(fichier_log, "***NOMBRE DE TOURS MAXIMAL ATTEINT***\n");
+
                 printf("%s", AfficheNbTeteJoueurs(*jeu));
                 PrintTableau(*jeu); // Dans le fichier log
+
                 char *message = malloc(1024 * sizeof(char));
                 snprintf(message, 1024, "\n%s\n", Statistique(*jeu));
                 send_all_joueurs(clients, nb_client, message);
@@ -316,13 +317,14 @@ void jeu_play(Jeu *jeu) {
 
 void *listen_joueurs() {
     while (1) {
-        printf("En attente de connexion de client...\n");
+        printf("\nEn attente de connexion de client...\n");
 
+        //Initialisation du socket
         struct sockaddr_in client_addr = {0};
-
         int taille = (int) sizeof(serveur_addr);
         int client_socket = accept(serveur_socket, (struct sockaddr *) &serveur_addr, (socklen_t *) &taille);
 
+        //Attente que les joueurs soient prêt
         if (all_joueur_pret()) {
             char mes[1024];
             if (nb_client == MAX_JOUEURS) strcpy(mes, BOLD_YELLOW"Le nombre de joueurs maximum a été atteint."RESET);
@@ -459,8 +461,9 @@ void *listen_choix_carte_joueur(void *argv) {
 }
 
 void client_quit(client *c) {
-    char *mess = (char *) malloc(1024 * sizeof(char));
-    snprintf(mess, 1024, BOLD_YELLOW"Le client %s a quitté la partie\n"RESET, c->pseudo);
+    char *mess = (char *) malloc(128 * sizeof(char));
+    snprintf(mess, 128, BOLD_YELLOW"\nLe client %s a quitté la partie\n"RESET, c->pseudo);
+    fprintf(fichier_log, "\nLe client %s a quitté la partie\n", c->pseudo);
     printf("%s\n", mess);
     send_all_joueurs(clients, nb_client, mess);
     free(mess);
@@ -485,28 +488,25 @@ char *recv_client_data(client *c) {
 
 int carte_trop_petite(client *c) {
 
-    char *message = BOLD_CYAN"Vous avez posé la carte la plus petite du plateau\n"
-                    "Quelle rangée voulez vous prendre [1-4] ?\n"RESET;
-
+    char *message = malloc(256 * sizeof(char));
+    strcpy(message,
+           BOLD_CYAN"Vous avez posé la carte la plus petite du plateau\nQuelle rangée voulez vous prendre [1-4] ?\n"RESET);
     send(c->socket, message, strlen(message), 0);
-    char *buff = recv_client_data(c);
-    int nb = atoi(buff);
 
-    if (nb < 1 || nb > 4) {
-        strcpy(message, BOLD_YELLOW"Erreur, vous devez entrer une ligne entre 1 et 4\n"RESET);
-        send(c->socket, message, strlen(message), 0);
-    }
+    int nb;
 
-    while (nb < 1 || nb > 4) {
-        buff = recv_client_data(c);
+    while (1) {
+        char *buff = recv_client_data(c);
         nb = atoi(buff);
 
         if (nb < 1 || nb > 4) {
             strcpy(message, BOLD_YELLOW"Erreur, vous devez entrer une ligne entre 1 et 4\n"RESET);
             send(c->socket, message, strlen(message), 0);
-        }
+        } else break;
         free(buff);
     }
+
+    free(message);
     printf("Le joueur %s choisit de prendre la ligne %d complète\n", c->pseudo, nb - 1);
     fprintf(fichier_log, "Le joueur %s choisit de prendre la ligne %d complète\n", c->pseudo, nb - 1);
     return nb - 1;
@@ -514,20 +514,17 @@ int carte_trop_petite(client *c) {
 
 void GestionSignauxServeur(int signal_recu) {
     switch (signal_recu) {
-
         //SIGNAL CTRL + C
         case SIGINT:
             fprintf(fichier_log, "SIGNAL %d REÇU\n", signal_recu);
             EndServeur();
             break;
-
             //SIGNAL POUR ARRETER PROGRAMME
         case SIGTERM:
             printf(BOLD_YELLOW"\nSIGNAL SIGTERM RECU\n"RESET);
             fprintf(fichier_log, "SIGNAL %d REÇU\n", signal_recu);
             EndServeur();
             break;
-
         default:
             printf(BOLD_YELLOW"\nSIGNAL RECU > %d\n"RESET, signal_recu);
             fprintf(fichier_log, "SIGNAL %d REÇU\n", signal_recu);
@@ -587,10 +584,32 @@ void ProcedureFinPartie(int etat) {
 //            free(message3);
             init_jeu(&jeu);
             resetJeu();
+            ChangeLimiteJeu();
             break;
     }
 
 
+}
+
+void ChangeLimiteJeu() {
+    send_all_joueurs(clients, nb_client, BOLD_YELLOW"En attente du serveur...\n"RESET);
+    printf(BOLD_HIGH_WHITE"\nVoulez-vous changer les règles du jeu ? [y] / [n]\n"RESET);
+    printf(BOLD_HIGH_WHITE"Actuellement le nombre de têtes maximal est de %d et la limite de tours maximal est de %d\n"RESET,
+           nb_TeteMax, nb_MancheMax);
+    printf(">");
+    char answer;
+    scanf(" %c", &answer);
+    if (answer == 'y' || answer == 'Y' || answer == '\n') {
+        printf(BOLD_HIGH_WHITE"Définissez le nombre de têtes maximal\n>"RESET);
+        nb_TeteMax = AskNombreUser(0, 10000);
+        printf(BOLD_HIGH_WHITE"Définissez le nombre de tours maximal\n>"RESET);
+        nb_MancheMax = AskNombreUser(0, 10000);
+        fprintf(fichier_log, "Changement du nombre de manches maximal : %d\n", nb_MancheMax);
+        fprintf(fichier_log, "Changement du nombre de têtes maximal : %d\n\n", nb_TeteMax);
+    } else {
+        nb_TeteMax = 66;
+        nb_MancheMax = 999;
+    }
 }
 
 void EndServeur() {
