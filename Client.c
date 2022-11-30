@@ -10,8 +10,6 @@
 int sock;
 char pseudo[64];
 
-//TODO Bug quand le client doit entrer une valeur genre 'pret' mais qu'il rentre autre chose
-
 
 // ******** //
 //   MAIN   //
@@ -49,7 +47,7 @@ int main(int argc, char **argv) {
     signal(SIGTERM, GestionSignauxClient);
 
 
-    printf(BOLD_WHITE"BIENVENUE SUR LE JEU "RESET);
+    printf(BOLD_HIGH_WHITE"BIENVENUE SUR LE JEU "RESET);
     printf(BOLD_GREEN"6"RESET);
     printf(BOLD_CYAN" QUI"RESET);
     printf(BOLD_MAGENTA" PREND!\n\n"RESET);

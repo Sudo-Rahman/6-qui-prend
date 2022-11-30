@@ -696,7 +696,6 @@ void AfficheTempsJeu(double duree);
  */
 void ChangeLimiteJeu();
 
-void ProcedureFinPartie(int etat);
 
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_JEU_H
