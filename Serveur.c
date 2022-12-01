@@ -27,6 +27,7 @@ Jeu jeu;
 FILE *fichier_log;
 char date[40], pwd[256], nom_fichier[256];
 int nb_client = 0, serveur_socket;
+unsigned short nb_Vide = 0;
 
 
 // ******** //
@@ -247,6 +248,15 @@ void jeu_play(Jeu *jeu) {
             }
             tour++; // Incrementation du tour des joueurs
 
+            if (nb_Vide == nb_Joueur) {
+                isOver = 3;
+                send_all_joueurs(clients, nb_client, BOLD_YELLOW"***MANCHE TERMINE***\n"RESET);
+                init_jeu(jeu);
+                isOver = 0;
+                nb_Vide = 0;
+            }
+
+
             //Cas ou nb de tour max atteint
             if (tour >= nb_MancheMax) {
                 //Au serveur
@@ -391,8 +401,10 @@ int all_joueur_pret() {
 
 void *listen_choix_carte_joueur(void *argv) {
 
-    if (isOver == 0) {
-        client *c = (client *) argv;
+    client *c = (client *) argv;
+
+    if (isOver == 0 && getNbCarteUtilisableDuJoueur(jeu, c->numero_joueur) > 0) {
+
         char *message = (char *) malloc(1024 * sizeof(char));
 
         //AFFICHAGE DES INFOS DU JOUEUR
@@ -437,10 +449,7 @@ void *listen_choix_carte_joueur(void *argv) {
 
         //Si joueur n'a pas de carte, on lui en redonnne 10
         if (getNbCarteUtilisableDuJoueur(jeu, c->numero_joueur) == 0) {
-            distribution_carte_joueur(&jeu, jeu.joueur[c->numero_joueur]);
-            snprintf(message, 1024, "Le joueur %s reçoit 10 cartes\n", c->pseudo);
-            send(c->socket, message, strlen(message), 0);
-            printf("Le joueur %s reçoit 10 cartes", c->pseudo);
+            nb_Vide++;
         }
 
         free(message);

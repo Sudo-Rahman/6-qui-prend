@@ -268,8 +268,10 @@ void init_jeu(Jeu *jeu) {
     //SI c'est la premiere partie, on initialise le nombre de défaites à 0.
     if (nb_Partie == 0) for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_defaite = 0;
 
-    //Nombre de têtes à 0 vu que le jeu commence
-    for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_penalite = 0;
+    //Nombre de têtes à 0 vu que le jeu commence et si jeu pas terminé on ne remet pas les têtes à 0
+    if(isOver == 0){
+        for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_penalite = 0;
+    }
 
     //On initialise le plateau à 0.
     Carte carte_0 = {0, 0, 0, 0};
@@ -278,7 +280,7 @@ void init_jeu(Jeu *jeu) {
     //Carte de la premiere colonne du plateau distribué
     creation_premiere_colonne_plateau(jeu);
     distribution_carte_joueurs(jeu);
-    affiche_plateau(jeu);
+//    affiche_plateau(jeu);
 }
 
 
