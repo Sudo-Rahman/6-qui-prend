@@ -1,6 +1,6 @@
-//
-// Created by rahman on 21/11/22.
-//
+//**********//
+//   Jeu.h  //
+//**********//
 
 #ifndef SYSTEMES_ET_RESEAUX_PROJET_JEU_H
 #define SYSTEMES_ET_RESEAUX_PROJET_JEU_H
@@ -12,12 +12,12 @@
 #include <math.h>
 #include "Color.h"
 
-#define MAX_JOUEURS 10
+#define MAX_JOUEURS 8
 #define MIN_JOUEURS 2
 
 
 typedef struct Carte {
-    unsigned short Numero, Tete, isPicked, isUsed;
+    unsigned char Numero, Tete, isPicked, isUsed;
 } Carte;
 
 typedef struct Joueur {
@@ -33,8 +33,8 @@ typedef struct Jeu {
     Carte *liste_carte[104];
 } Jeu;
 
-unsigned int isOver = 0, tour = 1, nb_Joueur = 0, nb_Partie = 0, nb_TeteMax = 66, nb_MancheMax = 999;
-unsigned short nextPartie = 0;
+unsigned int tour = 1, nb_Partie = 0, nb_TeteMax = 66, nb_MancheMax = 999;
+char isOver = 0, nb_Joueur = 0;
 double duree_total = 0;
 
 FILE *fichier_log;
@@ -73,7 +73,7 @@ void freeJeu(Jeu *jeu);
  * @param jeu
  * @return char*
  */
-char *RecapRegle(Jeu jeu);
+char *RecapRegle();
 
 
 /**
@@ -118,7 +118,7 @@ void ForceFinDuJeu();
 Carte *create_carte(unsigned short i);
 
 /**
- * @details Fonction qui retourne une carte de la liste non utilisé et distribué.
+ * @details Fonction qui retourne une carte de la liste non utilisée et distribuée.
  * @param jeu
  * @return carte
  */
@@ -132,7 +132,7 @@ Carte *get_carte_liste(Jeu *jeu);
 void distribution_carte_joueurs(Jeu *jeu);
 
 /**
- * @details Fonction qui distribue les cartes du joueur en parametre.
+ * @details Fonction qui distribue les cartes du joueur en paramètre.
  * @param jeu
  * @param j
  */
@@ -184,7 +184,7 @@ unsigned short getCarteRestante(Jeu jeu);
 unsigned short getCartePlusPetiteDuPlateau(Jeu jeu);
 
 /**
- * @brief Retourne sous forme de chaine de charactere les cartes du joueur en parametre.
+ * @brief Retourne sous forme de chaine de charactère les cartes du joueur en paramètre.
  * @param joueur
  * @return La liste des cartes du Joueur joueur.
  */
@@ -192,7 +192,7 @@ char *affiche_cartes_joueur(Joueur *joueur);
 
 
 /**
- * @details Retourne le numero de la dernière carte de la ligne mise en parametre.
+ * @details Retourne le numéro de la dernière carte de la ligne mise en paramètre.
  * @param jeu
  * @param ligne
  * @return unsigned short
@@ -201,7 +201,7 @@ unsigned char get_dernier_carte_ligne(Jeu *jeu, int ligne);
 
 
 /**
- * @details Retourne la position de la derniere carte de la ligne mise en parametre.
+ * @details Retourne la position de la dernière carte de la ligne mise en paramètre.
  * @param jeu
  * @param ligne
  * @return unsigned char
@@ -222,7 +222,7 @@ char get_pos_carte_mini(Jeu *jeu, int numero);
  * si la carte est trop petite, 0 si la carte est ajoutée a la dernière colonne d'une ligne
  * @param jeu
  * @param carte
- * @return 1 succes, -1 pas possible, 0 derniere case d'une ligne.
+ * @return 1 succès, -1 pas possible, 0 dernière case d'une ligne.
  */
 char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte);
 
@@ -241,24 +241,18 @@ void creation_premiere_colonne_plateau(Jeu *jeu);
 Joueur **get_ordre_joueur_tour(Jeu *jeu);
 
 /**
- * @details Supprime toutes les cartes de la ligne en parametre, ajoute la carte a la premiere
- * colonne de la ligne en parametre, et ajoute les pénalités de la ligne au joueur en parametre.
+ * @details Supprime toutes les cartes de la ligne en paramètre, ajoute la carte à la premiere
+ * colonne de la ligne en paramètre et ajoute les pénalités de la ligne au joueur en paramètre.
  * @param jeu
  * @param ligne
  * @param j
  */
 void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j);
 
-void freeJeu(Jeu *jeu)
-{
-    if(jeu->plateau == NULL)
-    {
-        for (int i = 0; i < 6; i++) {
-            free(jeu->plateau[i]);
-        }
-        free(jeu->plateau);
-    }
-
+void freeJeu(Jeu *jeu) {
+    for (int i = 0; i < 6; i++) free(jeu->plateau[i]);
+    free(jeu->plateau);
+    for (int i = 0; i < 104; i++) free(jeu->liste_carte[i]);
 }
 
 Carte **cree_plateau() {
@@ -268,12 +262,9 @@ Carte **cree_plateau() {
 }
 
 void creation_premiere_colonne_plateau(Jeu *jeu) {
-
     Carte *cartes[4];
 
-    for (int i = 0; i < 4; ++i)
-        cartes[i] = get_carte_liste(jeu);
-
+    for (int i = 0; i < 4; ++i) cartes[i] = get_carte_liste(jeu);
 
     for (int j = 1; j <= 4; j++) {
         for (int i = 0; i < 3; i++) {
@@ -285,17 +276,14 @@ void creation_premiere_colonne_plateau(Jeu *jeu) {
         }
     }
 
-    for (int i = 0; i < 4; i++)
-        jeu->plateau[i][0] = *cartes[i];
-
+    for (int i = 0; i < 4; i++) jeu->plateau[i][0] = *cartes[i];
 
 }
 
 Joueur **get_ordre_joueur_tour(Jeu *jeu) {
     Joueur **joueurs = (Joueur **) malloc(nb_Joueur * sizeof(Joueur *));
 
-    for (int i = 0; i < nb_Joueur; ++i)
-        joueurs[i] = jeu->joueur[i];
+    for (int i = 0; i < nb_Joueur; ++i) joueurs[i] = jeu->joueur[i];
 
     for (int j = 1; j <= nb_Joueur; j++) {
         for (int i = 0; i < nb_Joueur - 1; i++) {
@@ -346,7 +334,6 @@ char ajoute_carte_au_plateau(Jeu *jeu, Carte *carte) {
     }
 }
 
-
 void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j) {
     int penalite = 0;
     for (int i = 0; i < 6; ++i) {
@@ -364,7 +351,6 @@ void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j
     j->nb_penalite += penalite;
 }
 
-
 char get_pos_carte_mini(Jeu *jeu, int numero) {
     short diff = numero - get_dernier_carte_ligne(jeu, 0);
     char pos = -1;
@@ -380,20 +366,6 @@ char get_pos_carte_mini(Jeu *jeu, int numero) {
     }
     return pos;
 }
-
-
-
-//unsigned short getCartePlusPetiteDuPlateau(Jeu jeu) {
-//    unsigned short min = 104; //Min théorique dans la liste de carte
-//    for (int i = 0; i < 4; i++) {
-//        for (int j = 0; j < 6; j++) {
-//            if (jeu.plateau[i][j].Numero == 0)
-//                continue; //Saute la carte quand elle vaut 0 car ce n'est pas une carte
-//            else if (jeu.plateau[i][j].Numero < min) min = jeu.plateau[i][j].Numero;
-//        }
-//    }
-//    return min; // Retourne le numero de carte le plus petit du plateau
-//}
 
 unsigned char get_dernier_carte_ligne(Jeu *jeu, int ligne) {
     for (int i = 0; i < 6; ++i) {
@@ -425,7 +397,7 @@ Carte *create_carte(unsigned short i) {
 
 Carte *get_carte_liste(Jeu *jeu) {
     Carte *tmp[104];
-    int cpt = 0;
+    unsigned char cpt = 0;
     //Parcours de la liste pour trouver les cartes pas encore prise
     for (int i = 0; i < 104; ++i) {
         if (jeu->liste_carte[i]->isPicked == 0) {
@@ -433,7 +405,6 @@ Carte *get_carte_liste(Jeu *jeu) {
             cpt++;
         }
     }
-
 
     Carte *c = tmp[rand() % cpt];
     c->isPicked = 1;
@@ -461,44 +432,6 @@ void distribution_carte_joueurs(Jeu *jeu) {
     for (int i = 0; i < nb_Joueur; i++)
         distribution_carte_joueur(jeu, jeu->joueur[i]);
 }
-//
-//unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte) {
-//    int tabLastNumber[4];
-//    for (int i = 0; i < 4; i++) {
-//        for (int j = 0; j < 6; j++) {
-//            //Recupère dernier nombre des lignes du plateau
-//            if (jeu.plateau[i][j].Numero != 0) {
-//                tabLastNumber[i] = jeu.plateau[i][j].Numero;
-//            } else break;
-//        }
-//    }
-//    int min = 104; // La valeur maximale d'une carte est par défaut le minimum
-//    int position = 0;
-//    //Calcul la différence d'écart avec ces nombres
-//    for (int i = 0; i < 4; i++) {
-//        tabLastNumber[i] = abs(tabLastNumber[i] - numeroCarte);
-//    }
-//    //On cherche le minimum du tableau qui sera là où on pose la carte
-//    for (int i = 0; i < 4; i++) {
-//        if (tabLastNumber[i] < min) {
-//            min = tabLastNumber[i];
-//            position = i;
-//        }
-//    }
-//    return position; //Retourne la position de la colonne au rang n-1
-//}
-
-//unsigned short getLastPositionDeLaLigne(Jeu jeu, int colonne) {
-//    unsigned short lastPosition = 0;
-//    for (short i = 0; i < 6; i++) {
-//        if (jeu.plateau[colonne][i].Numero == 0) {
-//            lastPosition = i;
-//            break;
-//        }
-//    }
-//    return lastPosition;
-//}
-
 
 char *Statistique(Jeu jeu) {
 
@@ -506,7 +439,7 @@ char *Statistique(Jeu jeu) {
 
     //DANS TERMINAL DES JOUEURS
     snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"\n\t[STATISTIQUES]\n"RESET);
-    snprintf(tmp + strlen(tmp), 1024, "\nNombre de parties joué : %d\n", nb_Partie);
+    snprintf(tmp + strlen(tmp), 1024, "\nNombre de parties joué : %d\n", nb_Partie + 1);
     snprintf(tmp + strlen(tmp), 1024, "Nombre de tours effectué : %d\n", tour);
     snprintf(tmp + strlen(tmp), 1024, "Moyenne des têtes obtenues : %d\n", MoyenneDesTetes(jeu));
     snprintf(tmp + strlen(tmp), 1024, "%s", AfficheNbTeteJoueurs(jeu));
@@ -514,7 +447,7 @@ char *Statistique(Jeu jeu) {
 
     //DANS FICHIER
     fprintf(fichier_log, "\n\t[STATISTIQUES]\n");
-    fprintf(fichier_log, "\nNombre de parties joué : %d\n", nb_Partie);
+    fprintf(fichier_log, "\nNombre de parties joué : %d\n", nb_Partie + 1);
     fprintf(fichier_log, "Nombre de tours effectué : %d\n", tour);
     fprintf(fichier_log, "Moyenne des têtes obtenues : %d\n", MoyenneDesTetes(jeu));
     fprintf(fichier_log, "%s\n", AfficheNbTeteJoueurs(jeu));
@@ -527,7 +460,7 @@ char *Statistique(Jeu jeu) {
     return res;
 }
 
-char *RecapRegle(Jeu jeu) {
+char *RecapRegle() {
 
     char *tmp = malloc(255 * sizeof(char));
 
@@ -648,12 +581,10 @@ int AskNombreUser(int min, int max) {
 void ForceFinDuJeu() {
     printf(RESET);
     isOver = 1;
-    nextPartie = 1;
-    fprintf(fichier_log, "\n***LE JEU A ETE ARRETE***\n");
+    fprintf(fichier_log, "\n***LE JEU A ETE ARRÊTÉ***\n");
     fclose(fichier_log);
     exit(EXIT_SUCCESS);
 }
-
 
 /**
  * @details Fonction pour afficher le temps de jeu aux joueurs et dans le fichier log
@@ -666,7 +597,6 @@ void AfficheTempsJeu(double duree);
  * @details Fonction utilisée par le serveur pour changer les réglages du jeu
  */
 void ChangeLimiteJeu();
-
 
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_JEU_H

@@ -1,6 +1,6 @@
-//
-// Created by mcolliat21 on 10/31/22.
-//
+//**********//
+//  Color.h //
+//**********//
 
 #ifndef SYSTEMES_ET_RESEAUX_PROJET_COLOR_H
 #define SYSTEMES_ET_RESEAUX_PROJET_COLOR_H

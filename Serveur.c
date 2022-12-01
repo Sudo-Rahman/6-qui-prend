@@ -187,9 +187,9 @@ void jeu_play(Jeu *jeu) {
 
                 //Indiquer aux joueurs qui doit jouer
                 char *quiJoue = malloc(64 * sizeof(char));
-                snprintf(quiJoue, 64, "[INFO] - C'est au tour de ");
+                snprintf(quiJoue, 64, "[INFO] - Le joueur ");
                 snprintf(quiJoue + strlen(quiJoue), 64, BOLD_MAGENTA"%s"RESET, clients[i]->pseudo);
-                snprintf(quiJoue + strlen(quiJoue), 64, " de jouer\n\n");
+                snprintf(quiJoue + strlen(quiJoue), 64, " doit poser sa carte\n\n");
                 send_all_joueurs(clients, nb_client, quiJoue);
                 free(quiJoue);
 
@@ -227,17 +227,16 @@ void jeu_play(Jeu *jeu) {
 
                     jeu->joueur[i]->nb_defaite++;
                     isOver = 1; //Valeur qui nous fait sortir du WHILE
-                    nb_Partie++;
                     char *message = malloc(1024 * sizeof(char));
                     snprintf(message, 1024, "%s\n", Statistique(*jeu));
                     send_all_joueurs(clients, nb_client, message);
+                    free(message);
                     gettimeofday(&end, 0); // Initialisation du temps quand jeu est terminée
                     long secondes = end.tv_sec - begin.tv_sec;
                     long microsecondes = end.tv_usec - begin.tv_usec;
                     double duree_partie = secondes + microsecondes * 1e-6; // Calcul du temps total en seconde
                     duree_total += duree_partie;
                     AfficheTempsJeu(duree_partie);
-                    free(message);
                     break;
                 }
 
@@ -272,21 +271,18 @@ void jeu_play(Jeu *jeu) {
 
                 printf("%s", AfficheNbTeteJoueurs(*jeu));
                 PrintTableau(*jeu); // Dans le fichier log
-                nb_Partie++;
+                isOver = 1; //Valeur qui nous fait sortir du WHILE
                 char *message = malloc(1024 * sizeof(char));
-                snprintf(message, 1024, "\n%s\n", Statistique(*jeu));
+                snprintf(message, 1024, "%s\n", Statistique(*jeu));
                 send_all_joueurs(clients, nb_client, message);
+                free(message);
                 gettimeofday(&end, 0); // Initialisation du temps quand jeu est terminée
                 long secondes = end.tv_sec - begin.tv_sec;
                 long microsecondes = end.tv_usec - begin.tv_usec;
                 double duree_partie = secondes + microsecondes * 1e-6; // Calcul du temps total en seconde
                 duree_total += duree_partie;
                 AfficheTempsJeu(duree_partie);
-                isOver = 1; //Valeur qui nous fait sortir du WHILE
-                free(message);
-                break;
             }
-
             free(joueurs);
 
         } // FIN IF JEU TOURNE
@@ -294,17 +290,21 @@ void jeu_play(Jeu *jeu) {
 
             //Cas ou partie est finie
         else {
-            send_all_joueurs(clients, nb_client, BOLD_YELLOW"En attente du serveur...\n"RESET);
+            send_all_joueurs(clients, nb_client, BOLD_YELLOW"\nEn attente du serveur...\n"RESET);
             printf(BOLD_HIGH_WHITE"\nRelancer une partie ? [y] / [n]\n>"RESET);
             char answer;
             scanf(" %c", &answer);
             if (answer == 'y' || answer == 'Y' || answer == '\n') {
                 ChangeLimiteJeu();
+                send_all_joueurs(clients, nb_client, RecapRegle(*jeu));
                 freeJeu(jeu);
                 isOver = 0;
+                nb_Partie++;
                 init_jeu(jeu);
                 send_all_joueurs(clients, nb_client, BOLD_GREEN"La partie va commencer...\n"RESET);
                 printf(BOLD_GREEN"La partie va commencer...\n"RESET);
+                send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
+
             } else if (answer == 'n' || answer == 'N' || answer == 'x') {
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"Le serveur arrête stop le jeu...\n"RESET);
                 EndServeur();
@@ -577,12 +577,9 @@ void ChangeLimiteJeu() {
         printf(BOLD_HIGH_WHITE"Définissez le nombre de têtes maximal\n>"RESET);
         nb_TeteMax = AskNombreUser(0, 10000);
         printf(BOLD_HIGH_WHITE"Définissez le nombre de tours maximal\n>"RESET);
-        nb_MancheMax = AskNombreUser(10, 10000);
+        nb_MancheMax = AskNombreUser(0, 10000);
         fprintf(fichier_log, "Changement du nombre de manches maximal : %d\n", nb_MancheMax);
         fprintf(fichier_log, "Changement du nombre de têtes maximal : %d\n\n", nb_TeteMax);
-    } else {
-        nb_TeteMax = 66;
-        nb_MancheMax = 999;
     }
 }
 
