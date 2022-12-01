@@ -65,7 +65,7 @@ char *affiche_plateau(Jeu *jeu);
  * @details Fonction pour libérer de la mémoire la matrice de carte
  * @param jeu
  */
-void freeJeu(Jeu jeu);
+void freeJeu(Jeu *jeu);
 
 
 /**
@@ -82,13 +82,6 @@ char *RecapRegle(Jeu jeu);
  * @return char*
  */
 char *Statistique(Jeu jeu);
-
-
-/**
- * @details Fonction pour relancer le jeu une fois qu'il est terminé. Elle permet de réinitialiser le jeu en gardant la progression
- * @param jeu
- */
-void resetJeu();
 
 /**
  * @details Fonction qui fait la moyenne des têtes
@@ -256,42 +249,16 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu);
  */
 void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j);
 
-
-void init_jeu(Jeu *jeu) {
-
-    jeu->plateau = cree_plateau(); // Création du plateau de carte 4*6
-
-    //Creation des 104 cartes avec numéro de tête random
-    for (int i = 0; i < 104; i++) jeu->liste_carte[i] = create_carte(i + 1);
-
-
-    //SI c'est la premiere partie, on initialise le nombre de défaites à 0.
-    if (nb_Partie == 0) for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_defaite = 0;
-
-    //Nombre de têtes à 0 vu que le jeu commence et si jeu pas terminé on ne remet pas les têtes à 0
-    if(isOver == 0){
-        for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_penalite = 0;
+void freeJeu(Jeu *jeu)
+{
+    if(jeu->plateau == NULL)
+    {
+        for (int i = 0; i < 6; i++) {
+            free(jeu->plateau[i]);
+        }
+        free(jeu->plateau);
     }
 
-    //On initialise le plateau à 0.
-    Carte carte_0 = {0, 0, 0, 0};
-    for (int i = 0; i < 4; i++) for (int j = 0; j < 6; j++) jeu->plateau[i][j] = carte_0;
-
-    //Carte de la premiere colonne du plateau distribué
-    creation_premiere_colonne_plateau(jeu);
-    distribution_carte_joueurs(jeu);
-//    affiche_plateau(jeu);
-}
-
-
-void resetJeu() {
-    isOver = 0;
-    tour = 1;
-}
-
-void freeJeu(Jeu jeu) {
-    for (int i = 0; i < 6; i++) free(jeu.plateau[i]);
-    free(jeu.plateau);
 }
 
 Carte **cree_plateau() {
@@ -299,7 +266,6 @@ Carte **cree_plateau() {
     for (int i = 0; i < 6; i++) plateau[i] = (Carte *) malloc(6 * sizeof(Carte));
     return plateau;
 }
-
 
 void creation_premiere_colonne_plateau(Jeu *jeu) {
 
@@ -416,17 +382,18 @@ char get_pos_carte_mini(Jeu *jeu, int numero) {
 }
 
 
-unsigned short getCartePlusPetiteDuPlateau(Jeu jeu) {
-    unsigned short min = 104; //Min théorique dans la liste de carte
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 6; j++) {
-            if (jeu.plateau[i][j].Numero == 0)
-                continue; //Saute la carte quand elle vaut 0 car ce n'est pas une carte
-            else if (jeu.plateau[i][j].Numero < min) min = jeu.plateau[i][j].Numero;
-        }
-    }
-    return min; // Retourne le numero de carte le plus petit du plateau
-}
+
+//unsigned short getCartePlusPetiteDuPlateau(Jeu jeu) {
+//    unsigned short min = 104; //Min théorique dans la liste de carte
+//    for (int i = 0; i < 4; i++) {
+//        for (int j = 0; j < 6; j++) {
+//            if (jeu.plateau[i][j].Numero == 0)
+//                continue; //Saute la carte quand elle vaut 0 car ce n'est pas une carte
+//            else if (jeu.plateau[i][j].Numero < min) min = jeu.plateau[i][j].Numero;
+//        }
+//    }
+//    return min; // Retourne le numero de carte le plus petit du plateau
+//}
 
 unsigned char get_dernier_carte_ligne(Jeu *jeu, int ligne) {
     for (int i = 0; i < 6; ++i) {
@@ -494,52 +461,53 @@ void distribution_carte_joueurs(Jeu *jeu) {
     for (int i = 0; i < nb_Joueur; i++)
         distribution_carte_joueur(jeu, jeu->joueur[i]);
 }
+//
+//unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte) {
+//    int tabLastNumber[4];
+//    for (int i = 0; i < 4; i++) {
+//        for (int j = 0; j < 6; j++) {
+//            //Recupère dernier nombre des lignes du plateau
+//            if (jeu.plateau[i][j].Numero != 0) {
+//                tabLastNumber[i] = jeu.plateau[i][j].Numero;
+//            } else break;
+//        }
+//    }
+//    int min = 104; // La valeur maximale d'une carte est par défaut le minimum
+//    int position = 0;
+//    //Calcul la différence d'écart avec ces nombres
+//    for (int i = 0; i < 4; i++) {
+//        tabLastNumber[i] = abs(tabLastNumber[i] - numeroCarte);
+//    }
+//    //On cherche le minimum du tableau qui sera là où on pose la carte
+//    for (int i = 0; i < 4; i++) {
+//        if (tabLastNumber[i] < min) {
+//            min = tabLastNumber[i];
+//            position = i;
+//        }
+//    }
+//    return position; //Retourne la position de la colonne au rang n-1
+//}
 
-unsigned short getLastCarteDeLaLigne(Jeu jeu, int numeroCarte) {
-    int tabLastNumber[4];
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 6; j++) {
-            //Recupère dernier nombre des lignes du plateau
-            if (jeu.plateau[i][j].Numero != 0) {
-                tabLastNumber[i] = jeu.plateau[i][j].Numero;
-            } else break;
-        }
-    }
-    int min = 104; // La valeur maximale d'une carte est par défaut le minimum
-    int position = 0;
-    //Calcul la différence d'écart avec ces nombres
-    for (int i = 0; i < 4; i++) {
-        tabLastNumber[i] = abs(tabLastNumber[i] - numeroCarte);
-    }
-    //On cherche le minimum du tableau qui sera là où on pose la carte
-    for (int i = 0; i < 4; i++) {
-        if (tabLastNumber[i] < min) {
-            min = tabLastNumber[i];
-            position = i;
-        }
-    }
-    return position; //Retourne la position de la colonne au rang n-1
-}
-
-unsigned short getLastPositionDeLaLigne(Jeu jeu, int colonne) {
-    unsigned short lastPosition = 0;
-    for (short i = 0; i < 6; i++) {
-        if (jeu.plateau[colonne][i].Numero == 0) {
-            lastPosition = i;
-            break;
-        }
-    }
-    return lastPosition;
-}
+//unsigned short getLastPositionDeLaLigne(Jeu jeu, int colonne) {
+//    unsigned short lastPosition = 0;
+//    for (short i = 0; i < 6; i++) {
+//        if (jeu.plateau[colonne][i].Numero == 0) {
+//            lastPosition = i;
+//            break;
+//        }
+//    }
+//    return lastPosition;
+//}
 
 
 char *Statistique(Jeu jeu) {
 
     char *tmp = malloc(1024 * sizeof(char));
 
-    //DANS TERMINAL
+    //DANS TERMINAL DES JOUEURS
     snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"\n\t[STATISTIQUES]\n"RESET);
     snprintf(tmp + strlen(tmp), 1024, "\nNombre de parties joué : %d\n", nb_Partie);
+    snprintf(tmp + strlen(tmp), 1024, "Nombre de tours effectué : %d\n", tour);
     snprintf(tmp + strlen(tmp), 1024, "Moyenne des têtes obtenues : %d\n", MoyenneDesTetes(jeu));
     snprintf(tmp + strlen(tmp), 1024, "%s", AfficheNbTeteJoueurs(jeu));
 
@@ -547,6 +515,7 @@ char *Statistique(Jeu jeu) {
     //DANS FICHIER
     fprintf(fichier_log, "\n\t[STATISTIQUES]\n");
     fprintf(fichier_log, "\nNombre de parties joué : %d\n", nb_Partie);
+    fprintf(fichier_log, "Nombre de tours effectué : %d\n", tour);
     fprintf(fichier_log, "Moyenne des têtes obtenues : %d\n", MoyenneDesTetes(jeu));
     fprintf(fichier_log, "%s\n", AfficheNbTeteJoueurs(jeu));
     snprintf(tmp + strlen(tmp), 1024, "%s", MinEtMaxDefaite(jeu));

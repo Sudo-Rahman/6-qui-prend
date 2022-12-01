@@ -101,18 +101,15 @@ int main(int argc, char **argv) {
     }
 
     printf(BOLD_GREEN"Socket lié avec succès sur le port [%i]\n"RESET, PORT);
-    fprintf(fichier_log, "Socket lié avec succès sur le port [%i]\n", PORT);
+    fprintf(fichier_log, "Socket lié avec succès sur le port [%i]\n\n", PORT);
 
     listen(serveur_socket, 5);
 
-
+    ChangeLimiteJeu();
 
     //Lancement du thread qui gere les connections des joueurs.
     pthread_t thread;
     pthread_create(&thread, NULL, &listen_joueurs, NULL);
-
-    ChangeLimiteJeu();
-    printf(BOLD_HIGH_WHITE"En attente du jeu...\n"RESET);
 
 
     while (all_joueur_pret() == 0) {}
@@ -246,14 +243,18 @@ void jeu_play(Jeu *jeu) {
 
                 send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
             }
-            tour++; // Incrementation du tour des joueurs
 
+
+            //Cas où tous les joueurs n'ont plus de carte, on redonne des cartes et on change le tour
             if (nb_Vide == nb_Joueur) {
                 isOver = 3;
-                send_all_joueurs(clients, nb_client, BOLD_YELLOW"***MANCHE TERMINE***\n"RESET);
+                send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***MANCHE TERMINE***\n"RESET);
+                send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***LA PARTIE CONTINUE***\n"RESET);
+                freeJeu(jeu);
                 init_jeu(jeu);
                 isOver = 0;
                 nb_Vide = 0;
+                tour++; // Incrementation du tour des joueurs
             }
 
 
@@ -299,8 +300,9 @@ void jeu_play(Jeu *jeu) {
             scanf(" %c", &answer);
             if (answer == 'y' || answer == 'Y' || answer == '\n') {
                 ChangeLimiteJeu();
+                freeJeu(jeu);
+                isOver = 0;
                 init_jeu(jeu);
-                resetJeu();
                 send_all_joueurs(clients, nb_client, BOLD_GREEN"La partie va commencer...\n"RESET);
                 printf(BOLD_GREEN"La partie va commencer...\n"RESET);
             } else if (answer == 'n' || answer == 'N' || answer == 'x') {
@@ -447,7 +449,7 @@ void *listen_choix_carte_joueur(void *argv) {
 
         }
 
-        //Si joueur n'a pas de carte, on lui en redonnne 10
+        //Si joueur n'a pas de carte, on incremente le nombre de joueur n'ayant pas de carte
         if (getNbCarteUtilisableDuJoueur(jeu, c->numero_joueur) == 0) {
             nb_Vide++;
         }
@@ -455,6 +457,31 @@ void *listen_choix_carte_joueur(void *argv) {
         free(message);
     }
 
+}
+
+void init_jeu(Jeu *jeu) {
+
+    jeu->plateau = cree_plateau(); // Création du plateau de carte 4*6
+
+    //Creation des 104 cartes avec numéro de tête random
+    for (int i = 0; i < 104; i++) jeu->liste_carte[i] = create_carte(i + 1);
+
+    //SI c'est la premiere partie, on initialise le nombre de défaites à 0.
+    if (nb_Partie == 0) for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_defaite = 0;
+
+    //Nombre de têtes à 0 vu que le jeu commence et si jeu pas terminé on ne remet pas les têtes à 0.
+    if (isOver == 0) {
+        for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_penalite = 0;
+    }
+
+    //On initialise le plateau à 0.
+    Carte carte_0 = {0, 0, 0, 0};
+    for (int i = 0; i < 4; i++) for (int j = 0; j < 6; j++) jeu->plateau[i][j] = carte_0;
+
+    //Carte de la premiere colonne du plateau distribué
+    creation_premiere_colonne_plateau(jeu);
+    distribution_carte_joueurs(jeu);
+//    affiche_plateau(jeu);
 }
 
 void client_quit(client *c) {
