@@ -16,6 +16,7 @@
 #include <netdb.h> /* gethostbyname */
 
 #include "Jeu.h"
+#include "Bot.h"
 
 
 int PORT = 65534;
@@ -92,7 +93,7 @@ void close_all_clients();
  * @param c
  * @return chaine de caractère.
  */
-char *recv_client_data(client *c);
+void recv_client_data(client *c, char *buffer);
 
 /**
  * @details Quand un joueur joue une carte qui est trop petite.
@@ -110,6 +111,10 @@ void EndServeur();
  * @param signal_recu
  */
 void GestionSignauxServeur(int signal_recu);
+
+int is_bot(char *nom, client *c);
+
+void ajout_bot();
 
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H

@@ -40,10 +40,18 @@ int main(int argc, char * argv[]){
         exit(errno);
     }
 
+    char nom[1024];
+
+    snprintf(nom , 1024, "%llu", bot_type);
+    printf("%s\n",nom);
+
+    send(sock, nom, strlen(nom), 0);
+
 
     char *buff = (char *) malloc(1024 * sizeof (char ));
     while (1){
-        recv(sock,buff,sizeof (buff) -1,0);
+        if(recv(sock,buff,sizeof (buff) -1,0) ==0)
+            exit(-1);
     }
 
     exit(EXIT_SUCCESS);

@@ -34,7 +34,7 @@ typedef struct Jeu {
 } Jeu;
 
 unsigned int tour = 1, nb_Partie = 0, nb_TeteMax = 66, nb_MancheMax = 999;
-char isOver = 0, nb_Joueur = 0;
+char isOver = 0, nb_Joueur = 0, nb_bot = 0;
 double duree_total = 0;
 
 FILE *fichier_log;
@@ -469,8 +469,10 @@ char *RecapRegle() {
     snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d"RESET, nb_TeteMax);
     snprintf(tmp + strlen(tmp), 1024, "\nLe nombre de tours maximal est de ");
     snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_MancheMax);
-    snprintf(tmp + strlen(tmp), 1024, "Nombre de joueurs: ");
+    snprintf(tmp + strlen(tmp), 1024, "Nombre de joueurs total bot confondu : ");
     snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_Joueur);
+    snprintf(tmp + strlen(tmp), 1024, "Nombre de bots: ");
+    snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_bot);
 
     char *res = malloc(strlen(tmp) * sizeof(char));
     strcpy(res, tmp);

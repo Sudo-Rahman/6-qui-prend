@@ -13,7 +13,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "Serveur.h"
-#include <signal.h>
 
 
 // ********* //
@@ -28,6 +27,8 @@ FILE *fichier_log;
 char date[40], pwd[256], nom_fichier[256];
 int nb_client = 0, serveur_socket;
 unsigned short nb_Vide = 0;
+
+unsigned char nb_ia = 0;
 
 
 // ******** //
@@ -144,21 +145,29 @@ int main(int argc, char **argv) {
 void *joueur_pret(void *argv) {
     client *c = (client *) argv;
     char *message = (char *) malloc(1024 * sizeof(char));
+    char *buffer = (char *) malloc(1024 * sizeof(char));
     if (isOver == 0) {
-        strcpy(message, "Envoyer 'pret' ou appuyer sur [y] pour vous mettre prêt\n");
+        strcpy(message, "Envoyer 'pret' ou [y] pour vous mettre prêt\nEnvoyer [b] pour ajouter un bot.");
         send(c->socket, message, strlen(message), 0);
         while (1) {
-            char *buffer = recv_client_data(c);
+            recv_client_data(c, buffer);
 
             if (strcmp(buffer, "pret") == 0 || strcmp(buffer, "y") == 0) {
                 c->pret = 1;
                 snprintf(message, 1024, BOLD_GREEN"Le joueur %s à mis prêt"RESET, c->pseudo);
                 send_all_joueurs(clients, nb_client, message);
                 break;
+            }else{
+                if(strcmp(buffer, "b") ==0){
+                    if(nb_client < MAX_JOUEURS){
+                        ajout_bot();
+                    }
+                }
             }
-            free(buffer);
         }
         free(message);
+        free(buffer);
+
     }
 
     return 0;
@@ -339,7 +348,16 @@ void *listen_joueurs() {
         c->socket = client_socket;
 
         char *message = (char *) calloc(1024, sizeof(char));
-        char *buffer = recv_client_data(c);
+        char *buffer = (char *) malloc(1024 * sizeof(char));
+
+        recv_client_data(c, buffer);
+
+        int a = is_bot(buffer, c);
+        printf("%d\n", a);
+        if(a){
+            printf("bot ici\n");
+            continue;
+        }
 
         strcpy(c->pseudo, buffer);
 
@@ -373,8 +391,10 @@ void *listen_joueurs() {
 }
 
 void send_all_joueurs(client **clients, int nb_client, char *message) {
-    for (int i = 0; i < nb_client; ++i)
-        send(clients[i]->socket, message, strlen(message), 0);
+    for (int i = 0; i < nb_client; ++i){
+        if(clients[i]->bot_or_not == 0)
+            send(clients[i]->socket, message, strlen(message), 0);
+    }
 }
 
 client *init_joueur() {
@@ -399,6 +419,7 @@ int all_joueur_pret() {
         if (compteur >= MIN_JOUEURS)
             return 1;
     }
+    usleep(.1);
     return 0;
 }
 
@@ -409,6 +430,7 @@ void *listen_choix_carte_joueur(void *argv) {
     if (isOver == 0 && getNbCarteUtilisableDuJoueur(jeu, c->numero_joueur) > 0) {
 
         char *message = (char *) malloc(1024 * sizeof(char));
+        char *buffer = (char *) malloc(1024 * sizeof(char));
 
         //AFFICHAGE DES INFOS DU JOUEUR
         snprintf(message + strlen(message), 1024, BOLD_CYAN"\n\t*** ROUND [%d] ***\n"RESET, tour);
@@ -423,7 +445,7 @@ void *listen_choix_carte_joueur(void *argv) {
 
         //BOUCLE DE SAISIE DE LA CARTE
         while (1) {
-            char *buffer = recv_client_data(c);
+            recv_client_data(c,buffer);
 
             int nb = atoi(buffer);
             if (nb == 0 || (nb > 10 || nb < 1)) {
@@ -446,8 +468,6 @@ void *listen_choix_carte_joueur(void *argv) {
                     break;
                 }
             }
-            free(buffer);
-
         }
 
         //Si joueur n'a pas de carte, on incremente le nombre de joueur n'ayant pas de carte
@@ -456,6 +476,7 @@ void *listen_choix_carte_joueur(void *argv) {
         }
 
         free(message);
+        free(buffer);
     }
 
 }
@@ -502,15 +523,16 @@ void close_all_clients() {
     close(serveur_socket);
 }
 
-char *recv_client_data(client *c) {
-    char *buffer = (char *) calloc(1024, sizeof(char *));
+void recv_client_data(client *c,char *buffer) {
     if (recv(c->socket, buffer, sizeof(buffer) - 1, 0) == 0) client_quit(c);
-    return buffer;
+    printf("%s\n", buffer);
 }
 
 int carte_trop_petite(client *c) {
 
     char *message = malloc(256 * sizeof(char));
+    char *buffer = (char *) malloc(1024 * sizeof(char));
+
     strcpy(message,
            BOLD_CYAN"Vous avez posé la carte la plus petite du plateau\nQuelle rangée voulez vous prendre [1-4] ?\n"RESET);
     send(c->socket, message, strlen(message), 0);
@@ -518,17 +540,18 @@ int carte_trop_petite(client *c) {
     int nb;
 
     while (1) {
-        char *buff = recv_client_data(c);
-        nb = atoi(buff);
+        recv_client_data(c, buffer);
+        nb = atoi(buffer);
 
         if (nb < 1 || nb > 4) {
             strcpy(message, BOLD_YELLOW"Erreur, vous devez entrer une ligne entre 1 et 4\n"RESET);
             send(c->socket, message, strlen(message), 0);
         } else break;
-        free(buff);
     }
 
     free(message);
+    free(buffer);
+
     printf("Le joueur %s choisit de prendre la ligne %d complète\n", c->pseudo, nb - 1);
     fprintf(fichier_log, "Le joueur %s choisit de prendre la ligne %d complète\n", c->pseudo, nb - 1);
     return nb - 1;
@@ -594,4 +617,37 @@ void EndServeur() {
     fflush(stdin);
     printf(RESET);
     exit(EXIT_SUCCESS);
+}
+
+void ajout_bot(){
+
+    int x = fork();
+
+
+    char * nom_programme = "bot" ;
+    char port[1024];
+    snprintf(port, 1024, "%d", PORT);
+    char * args [ ] = { nom_programme , port , "127.0.0.1" , NULL } ;
+
+    if (x == 0)
+        execv(nom_programme, args);
+}
+
+int is_bot(char *nom, client *c){
+
+    printf("%s - %llu - %llu",nom , atoll(nom), bot_type);
+    if(atoll(nom)  == bot_type){
+        c->pret = 1;
+        c->bot_or_not = 1;
+        snprintf(c->pseudo,64,"bot n°%d", nb_ia);
+        nb_bot++;
+        nb_ia++
+        clients[nb_client] =c;
+        send_all_joueurs(clients, nb_client,"un bot à été ajouté.");
+        nb_client++;
+        nb_Joueur++;
+        return 1;
+    }
+
+    return 0;
 }
