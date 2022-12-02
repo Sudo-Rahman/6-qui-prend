@@ -24,7 +24,8 @@ int PORT = 65534;
 #define BUF_SIZE 1024
 
 
-typedef struct {
+typedef struct
+{
     char *pseudo;
     short numero_joueur;
     short socket;
@@ -77,6 +78,13 @@ int all_joueur_pret();
 void *listen_choix_carte_joueur(void *);
 
 /**
+ * @details Ecoute le bot, pour récupérer la carte choisie par le bot.
+ * @param argv
+ * @return void
+ */
+void *listen_choix_carte_bot(void *);
+
+/**
  * @details Ecoute du client mis en paramètre si celui qui le serveur la partie s'arrête et tous les clients sont déconnecter du serveur.
  * @param argv
  * @return void
@@ -104,13 +112,13 @@ int carte_trop_petite(client *c);
 
 void jeu_play(Jeu *jeu);
 
-void EndServeur();
+void end_serveur();
 
 /**
  * @details Fonction de gestion des signaux du programme
  * @param signal_recu
  */
-void GestionSignauxServeur(int signal_recu);
+void gestion_signaux_serveur(int signal_recu);
 
 int is_bot(char *nom, client *c);
 

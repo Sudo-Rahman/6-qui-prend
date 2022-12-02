@@ -14,15 +14,18 @@ char pseudo[1024];
 // ******** //
 //   MAIN   //
 // ******** //
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
-    if (argc == 3) {
+    if (argc == 3)
+    {
         PORT = atoi(argv[1]);
         strcpy(argv[2], hostname);
     }
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock == -1) {
+    if (sock == -1)
+    {
         perror(BOLD_RED"Impossible de créer le socket"RESET);
         exit(errno);
     }
@@ -32,12 +35,14 @@ int main(int argc, char **argv) {
     sin.sin_port = htons(PORT); /* on utilise htons pour le port */
     sin.sin_family = AF_INET;
 
-    if (inet_pton(AF_INET, hostname, &sin.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, hostname, &sin.sin_addr) <= 0)
+    {
         perror(BOLD_RED"\nAdresse invalide \n"RESET);
         exit(errno);
     }
 
-    if (connect(sock, (struct sockaddr *) &sin, sizeof(struct sockaddr)) == -1) {
+    if (connect(sock, (struct sockaddr *) &sin, sizeof(struct sockaddr)) == -1)
+    {
         perror(BOLD_RED"Connection impossible"RESET);
         exit(errno);
     }
@@ -65,7 +70,8 @@ int main(int argc, char **argv) {
 
 
     // Boucle pour envoyer des messages au serveur
-    while (1) {
+    while (1)
+    {
         char *message = (char *) malloc(512);
         scanf("%s", message);
         send(sock, message, strlen(message), 0);
@@ -84,12 +90,15 @@ int main(int argc, char **argv) {
 // ********* //
 
 
-void *listen_all_time(void *argv) {
-    while (1) {
+void *listen_all_time(void *argv)
+{
+    while (1)
+    {
         char buffer[2048];
         int n = 0;
 
-        if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) == 0) {
+        if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) == 0)
+        {
             perror(BOLD_RED"Erreur dans fonction listen_all_time()"RESET);
             exit(errno);
         }

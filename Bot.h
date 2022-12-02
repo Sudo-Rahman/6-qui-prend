@@ -21,7 +21,7 @@ int PORT;
 char *hostname = "127.0.0.1";
 
 long long int bot_type = 0xFFFF;
-long long int carte = 0xFFFE;
-long long int ligne = 0xFFFD;
+long long int carte_type = 0xFFFE;
+long long int ligne_type = 0xFFFD;
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_BOT_H
