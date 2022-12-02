@@ -1,7 +1,6 @@
-//
-// Created by rahman on 16/11/22.
-//
-
+//**********//
+// Server.h //
+//**********//
 
 #ifndef SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H
 #define SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H

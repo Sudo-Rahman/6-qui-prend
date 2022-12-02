@@ -1,6 +1,7 @@
-//
-// Created by rahman on 16/11/22.
-//
+//**********//
+// Client.h //
+//**********//
+
 
 #ifndef SYSTEMES_ET_RESEAUX_PROJET_CLIENT_H
 #define SYSTEMES_ET_RESEAUX_PROJET_CLIENT_H
