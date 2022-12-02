@@ -249,6 +249,7 @@ void jeu_play(Jeu *jeu) {
                 isOver = 3;
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***MANCHE TERMINE***\n"RESET);
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***LA PARTIE CONTINUE***\n"RESET);
+                send_all_joueurs(clients, nb_client, AfficheNbTeteJoueurs(*jeu));
                 freeJeu(jeu);
                 init_jeu(jeu);
                 isOver = 0;
@@ -343,7 +344,7 @@ void *listen_joueurs() {
         strcpy(c->pseudo, buffer);
 
         printf("Connection réalisé avec le joueur %s\n", c->pseudo);
-        snprintf(message, 1024, "Vous avez rejoint le serveur, vous êtes le joueur n°%u\n", nb_client + 1);
+        snprintf(message, 1024, "Vous avez rejoint le jeu, vous êtes le joueur n°%u\n", nb_client + 1);
         send(client_socket, message, strlen(message), 0);
 
         snprintf(message, 1024, "Le joueur : %s vient de se connecter.", c->pseudo);

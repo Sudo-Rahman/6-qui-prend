@@ -25,11 +25,11 @@ int PORT = 65534;
 
 typedef struct {
     char *pseudo;
-    int numero_joueur;
-    int socket;
-    int pret;
+    short numero_joueur;
+    short socket;
+    short pret;
     Joueur *joueur;
-    int bot_or_not;
+    short bot_or_not;
 
 } client;
 
