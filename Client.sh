@@ -1,5 +1,9 @@
 #!/bin/bash
 
-gcc Client.c  -lpthread -o Client;
+clear
 
-./Client;
+gcc Bot.c -o bot
+
+gcc Client.c -lpthread -o Client
+
+./Client

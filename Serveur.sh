@@ -1,5 +1,7 @@
 #!/bin/bash
 
-gcc Serveur.c  -lpthread -o Serveur;
+clear
 
-./Serveur;
+gcc Serveur.c -lpthread -o Serveur
+
+./Serveur

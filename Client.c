@@ -65,9 +65,7 @@ int main(int argc, char **argv)
     send(sock, pseudo, strlen(pseudo), 0);
 
     pthread_t pthread;
-
     pthread_create(&pthread, NULL, &listen_all_time, NULL);
-
 
     // Boucle pour envoyer des messages au serveur
     while (1)

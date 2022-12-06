@@ -3,7 +3,7 @@
 //
 
 #include "Bot.h"
-
+#include "Color.h"
 #include <string.h>
 #include <time.h>
 
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
     {
-        perror("ereur bot");
+        perror(BOLD_RED"erreur bot"RESET);
         exit(errno);
     }
 
@@ -35,13 +35,13 @@ int main(int argc, char *argv[])
 
     if (inet_pton(AF_INET, hostname, &sin.sin_addr) <= 0)
     {
-        perror("\nAdresse invalide \n");
+        perror(BOLD_RED"\nAdresse invalide \n"RESET);
         exit(errno);
     }
 
     if (connect(sock, (struct sockaddr *) &sin, sizeof(struct sockaddr)) == -1)
     {
-        perror("Connection impossible");
+        perror(BOLD_RED"Connection impossible"RESET);
         exit(errno);
     }
 
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
 
         if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) == 0)
         {
+            perror(BOLD_RED"Erreur dans fonction listen_all_time()"RESET);
             exit(errno);
         }
         buffer[n] = '\0';
@@ -71,19 +72,19 @@ int main(int argc, char *argv[])
 
         if ((n = recv(sock, buffer, sizeof buffer - 1, 0)) == 0)
         {
+            perror(BOLD_RED"Erreur dans fonction listen_all_time()"RESET);
             exit(errno);
         }
         buffer[n] = '\0';
 
-
-
-
         //todo probleme rand ne marche pas renvoie toujours la meme suite de nombre.
         if (nb == carte_type)
         {
-            char *randd = &buffer[(rand() % strlen(buffer))];
-            printf("%s\n", randd);
+            char *randd = malloc(1024* sizeof(char));
+            strcpy(randd, &buffer[(rand() % strlen(buffer))]);
+            printf("Nombre entrée par le bot --> [%s] SIZE > %d\n", randd, strlen(randd));
             send(sock, randd, strlen(randd), 0);
+            free(randd);
             continue;
         }
         if (nb == ligne_type)
