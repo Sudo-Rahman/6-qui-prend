@@ -37,7 +37,7 @@ void *listen_all_time(void *);
  * @details Fonction de gestion des signaux du programme
  * @param signal_recu
  */
-void GestionSignauxClient(int signal_recu)
+void gestion_signaux_client(int signal_recu)
 {
 
     switch (signal_recu)

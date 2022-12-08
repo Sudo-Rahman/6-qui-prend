@@ -34,7 +34,7 @@ typedef struct Jeu {
 } Jeu;
 
 unsigned int tour = 1, nb_partie = 0, nb_tete_max = 66, nb_manche_max = 999;
-char isOver = 0, nb_Joueur = 0, nb_bot = 0;
+unsigned char isOver = 0, nb_Joueur = 0, nb_bot = 0,nb_pret = 0;
 double duree_total = 0;
 
 FILE *fichier_log;
@@ -542,13 +542,13 @@ void force_fin_jeu() {
  * @details Fonction pour afficher le temps de jeu aux joueurs et dans le fichier log
  * @param duree
  */
-void AfficheTempsJeu(double duree);
+void affiche_temps_jeu(double duree);
 
 
 /**
  * @details Fonction utilisée par le serveur pour changer les réglages du jeu
  */
-void ChangeLimiteJeu();
+void change_limite_jeu();
 
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_JEU_H

@@ -48,8 +48,8 @@ int main(int argc, char **argv)
     }
 
     //GESTION DES SIGNAUX pour fermer le programme correctement
-    signal(SIGINT, GestionSignauxClient);
-    signal(SIGTERM, GestionSignauxClient);
+    signal(SIGINT, gestion_signaux_client);
+    signal(SIGTERM, gestion_signaux_client);
 
 
     printf(BOLD_HIGH_WHITE"BIENVENUE SUR LE JEU "RESET);

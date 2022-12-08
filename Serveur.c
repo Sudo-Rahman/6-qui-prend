@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 
     listen(serveur_socket, 5);
 
-    ChangeLimiteJeu();
+    change_limite_jeu();
 
     //Lancement du thread qui gere les connections des joueurs.
     pthread_t thread;
@@ -156,10 +156,7 @@ void *joueur_pret(void *argv) {
 
             if (strcmp(buffer, "pret") == 0 || strcmp(buffer, "y") == 0) {
                 c->pret = 1;
-                unsigned char nb_pret = 0;
-                for (unsigned char i = 0; i < nb_client; ++i) {
-                    if (clients[i]->pret) nb_pret++;
-                }
+                nb_pret++;
                 snprintf(message, 1024, BOLD_GREEN"Le joueur %s à mis prêt [%d/%d]\n"RESET, c->pseudo, nb_pret,
                          nb_Joueur);
                 send_all_joueurs(clients, nb_client, message);
@@ -171,6 +168,16 @@ void *joueur_pret(void *argv) {
                     snprintf(message, 1024, BOLD_YELLOW"Il manque encore %d joueur pour commencer la partie\n"RESET,
                              MIN_JOUEURS - nb_Joueur);
                     send_all_joueurs(clients, nb_client, message);
+                }
+                while (nb_pret<MIN_JOUEURS){
+                    strcpy(message, "Envoyer [b] pour ajouter un bot.");
+                    send(c->socket, message, strlen(message), 0);
+                    recv_client_data(c, buffer);
+                    if (strcmp(buffer, "b") == 0) {
+                        if (nb_client < MAX_JOUEURS) {
+                            ajout_bot();
+                        }
+                    }
                 }
                 break;
             } else {
@@ -262,7 +269,7 @@ void jeu_play(Jeu *jeu) {
                     long microsecondes = end.tv_usec - begin.tv_usec;
                     double duree_partie = secondes + microsecondes * 1e-6; // Calcul du temps total en seconde
                     duree_total += duree_partie;
-                    AfficheTempsJeu(duree_partie);
+                    affiche_temps_jeu(duree_partie);
                     break;
                 }
 
@@ -312,7 +319,7 @@ void jeu_play(Jeu *jeu) {
                 long microsecondes = end.tv_usec - begin.tv_usec;
                 double duree_partie = secondes + microsecondes * 1e-6; // Calcul du temps total en seconde
                 duree_total += duree_partie;
-                AfficheTempsJeu(duree_partie);
+                affiche_temps_jeu(duree_partie);
             }
             free(joueurs);
 
@@ -326,7 +333,7 @@ void jeu_play(Jeu *jeu) {
             char answer;
             scanf(" %c", &answer);
             if (answer == 'y' || answer == 'Y' || answer == '\n') {
-                ChangeLimiteJeu();
+                change_limite_jeu();
                 send_all_joueurs(clients, nb_client, recap_regle(*jeu));
                 free_jeu(jeu);
                 isOver = 0;
@@ -374,7 +381,6 @@ void *listen_joueurs() {
         recv_client_data(c, buffer);
 
         int a = is_bot(buffer, c);
-        printf("%d\n", a);
         if (a) {
             printf("Un bot s'est connecté au serveur\n");
             continue;
@@ -440,7 +446,7 @@ int all_joueur_pret() {
     //Si tous les joueurs sont prets et que le nombre est bon le jeu commence
     if (compteur == nb_client && compteur >= MIN_JOUEURS) return 1;
 
-    usleep((__useconds_t) .1);
+    usleep((useconds_t) .1);
     return 0;
 }
 
@@ -514,9 +520,10 @@ void *listen_choix_carte_bot(void *argv) {
 
             for (int i = 0; i < 10; ++i) {
                 if (c->joueur->carte[i]->is_used == 0) {
-                    char chiffre[5];
-                    snprintf(chiffre, strlen(chiffre), "%d", i);
-                    strcat(message, chiffre);
+                    char chiffre = "0123456789"[i];
+                    strcat(message, &chiffre);
+                    printf("%s\n", message);
+                    fflush(stdout);
                 }
             }
 
@@ -526,9 +533,14 @@ void *listen_choix_carte_bot(void *argv) {
 
             send(c->socket, mes, strlen(mes), 0);
 
-            usleep((__useconds_t) .1);
+            usleep((useconds_t) .1);
+
+            printf("%s\n", message);
+            fflush(stdout);
 
             send(c->socket, message, strlen(message), 0);
+            printf("ciiic\n");
+            fflush(stdout);
 
 
             recv_client_data(c, buffer);
@@ -603,7 +615,7 @@ int carte_trop_petite(client *c) {
         snprintf(mes, strlen(mes), "%llu", ligne_type);
 
         send(c->socket, mes, strlen(mes), 0);
-        usleep((__useconds_t) .1);
+        usleep((useconds_t) .1);
 
         send(c->socket, "1234", 4, 0);
 
@@ -658,7 +670,7 @@ void gestion_signaux_serveur(int signal_recu) {
     }
 }
 
-void AfficheTempsJeu(double duree) {
+void affiche_temps_jeu(double duree) {
     char *message = malloc(512 * sizeof(char));
     printf("Durée de la partie [%f] > %.3f secondes\n", duree);
     printf("Temps de jeu total :  %.3f secondes\n", duree_total);
@@ -670,7 +682,7 @@ void AfficheTempsJeu(double duree) {
     free(message);
 }
 
-void ChangeLimiteJeu() {
+void change_limite_jeu() {
     send_all_joueurs(clients, nb_client, BOLD_YELLOW"En attente du serveur...\n"RESET);
     printf(BOLD_HIGH_WHITE"\nVoulez-vous changer les règles du jeu ? [y] / [n]\n"RESET);
     printf(BOLD_HIGH_WHITE"Actuellement le nombre de têtes maximal est de %d et la limite de tours maximal est de %d\n"RESET,
@@ -705,7 +717,7 @@ void ajout_bot() {
     int x = fork();
     char *nom_programme = "bot";
     char port[1024];
-    snprintf(port, strlen(port), "%d", PORT);
+    snprintf(port, 1024, "%d", PORT);
     char *args[] = {nom_programme, port, "127.0.0.1", NULL};
 
     if (x == 0) execv(nom_programme, args);
@@ -745,9 +757,9 @@ char *affiche_nb_tete_joueurs(Jeu jeu) {
 
 int is_bot(char *nom, client *c) {
 
-    printf("%s - %llu - %llu", nom, atoll(nom), bot_type);
     if (atoll(nom) == bot_type) {
         c->pret = 1;
+        nb_pret++;
         c->bot_or_not = 1;
         snprintf(c->pseudo, 64, "bot n°%d", nb_ia);
         nb_bot++;
@@ -759,6 +771,5 @@ int is_bot(char *nom, client *c) {
         nb_Joueur++;
         return 1;
     }
-
     return 0;
 }
