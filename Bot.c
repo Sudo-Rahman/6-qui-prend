@@ -56,57 +56,28 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        printf("ici\n");
         fflush(stdout);
 
-        char *type =(char *) calloc(20, sizeof (char ));
+        char buffer[2048];
         int n = 0;
 
-        if ((n = recv(sock, type, sizeof type - 1, 0)) == 0)
+
+        if ((n = recv(sock, buffer, sizeof buffer -1, 0)) == 0)
         {
             perror(BOLD_RED"Erreur dans fonction listen_all_time()"RESET);
             exit(errno);
         }
-        type[n] = '\n';
-
-
-        const long long int nb = atoll(type);
-
-        printf("%llu", nb);
-        fflush(stdout);
-
-
-        //todo probleme rand ne marche pas renvoie toujours la meme suite de nombre.
-        if (nb == carte_type)
+        buffer[n] = '\0';
+//        printf("%s\n", buffer);
+        char chiffre;
+        do
         {
-            char cartes[10];
-            if ((n = recv(sock, cartes, sizeof cartes - 1, 0)) == 0)
-            {
-                perror(BOLD_RED"Erreur dans fonction listen_all_time()"RESET);
-                exit(errno);
-            }
-            cartes[n] = '\n';
-            printf("%s\n", cartes);
-            fflush(stdout);
-            printf("Nombre entrée par le bot --> [%c] SIZE > %lu\n",cartes[rand()%strlen(cartes)],strlen(cartes));
-            send(sock, &cartes[rand()%strlen(cartes)], 1, 0);
-            continue;
-        }
-        if (nb == ligne_type)
-        {
-            char lignes[5];
-            if ((n = recv(sock, cartes, sizeof cartes - 1, 0)) == 0)
-            {
-                perror(BOLD_RED"Erreur dans fonction listen_all_time()"RESET);
-                exit(errno);
-            }
-            lign*[n] = '\n';
-            printf("%s\n", lignes);
-            send(sock, &"1234"[rand()%4], 1, 0);
-            continue;
-        }
+            chiffre = buffer[rand()%n];
+            printf("%c aa\n", chiffre);
+        } while (strcmp(&chiffre, "") ==0);
 
-        free(type);
+        send(sock, &chiffre, 1, 0);
+
     }
 
     exit(EXIT_SUCCESS);

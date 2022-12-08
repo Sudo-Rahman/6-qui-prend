@@ -23,6 +23,8 @@ char *hostname = "127.0.0.1";
 long long int bot_type = 0xFFFF;
 long long int carte_type = 0xFFFE;
 long long int ligne_type = 0xFFFD;
+long long int recv_ok = 0xFFFC;
+
 
 
 

@@ -13,7 +13,7 @@
 #include "Color.h"
 
 #define MAX_JOUEURS 10
-#define MIN_JOUEURS 2
+#define MIN_JOUEURS 1
 
 
 typedef struct Carte {
