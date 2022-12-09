@@ -110,8 +110,15 @@ void recv_client_data(client *c, char *buffer);
  */
 int carte_trop_petite(client *c);
 
+/**
+ * @details boucle du jeu
+ * @param jeu
+ */
 void jeu_play(Jeu *jeu);
 
+/**
+ * @details Met fin au serveur, close les clients et le serveur.
+ */
 void end_serveur();
 
 /**
@@ -120,9 +127,33 @@ void end_serveur();
  */
 void gestion_signaux_serveur(int signal_recu);
 
+/**
+ * @details Fonction qui test si le client en parametre un est bot ou pas.
+ * @param nom
+ * @param c
+ * @return 1 si c’est un bot 0 sinon
+ */
 int is_bot(char *nom, client *c);
 
+/**
+ * @details Ajoute un bot au jeu.
+ */
 void ajout_bot();
 
+/**
+ * @details Fonction pour afficher le temps de jeu aux joueurs et dans le fichier log
+ * @param duree
+ */
+void affiche_temps_jeu(double duree);
+
+/**
+ * @details Fonction utilisée par le serveur pour changer les réglages du jeu
+ */
+void change_limite_jeu();
+
+/**
+ * @details free les variables du serveur et du jeu.
+ */
+void free_serveur();
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_SERVEUR_H

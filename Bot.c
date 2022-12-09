@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
         if ((n = recv(sock, buffer, sizeof buffer -1, 0)) == 0)
         {
-            perror(BOLD_RED"Erreur dans fonction listen_all_time()"RESET);
+            perror(BOLD_RED"Erreur reception données"RESET);
             exit(errno);
         }
         buffer[n] = '\0';
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
         do
         {
             chiffre = buffer[rand()%n];
-            printf("%c aa\n", chiffre);
+//            printf("%c\n", chiffre);
         } while (strcmp(&chiffre, "") ==0);
 
         send(sock, &chiffre, 1, 0);

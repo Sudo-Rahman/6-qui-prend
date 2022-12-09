@@ -81,27 +81,27 @@ char *recap_regle();
  * @param jeu
  * @return char*
  */
-char *statistique(Jeu jeu);
+char *statistique(Jeu *jeu);
 
 /**
  * @details Fonction qui fait la moyenne des têtes
  * @param jeu
  * @return int
  */
-int moyenne_des_tetes(Jeu jeu);
+int moyenne_des_tetes(Jeu *jeu);
 
 /**
  * @details Fonction qui affiche quel joueur a le plus et qui a le moins de défaite
  * @param jeu
  * @return char*
  */
-char *min_max_defaite(Jeu jeu);
+char *min_max_defaite(Jeu *jeu);
 
 /**
  * @details Fonction pour afficher le tableau dans un fichier log
  * @param jeu
  */
-void print_tableau(Jeu jeu);
+void print_tableau(Jeu *jeu);
 
 /**
  * @details Fonction qui force la fin du jeu si l'utilisateur appuie sur 'x'
@@ -139,12 +139,6 @@ void distribution_carte_joueurs(Jeu *jeu);
 void distribution_carte_joueur(Jeu *jeu, Joueur *j);
 
 
-/**
- * @details Fonction qui affiche le nombre de têtes des joueurs
- * @param jeu
- * @return char*
- */
-char *affiche_nb_tete_joueurs(Jeu jeu);
 
 /**
  * @details Fonction qui affiche le nombre de cartes que l'utilisateur peut encore poser
@@ -152,15 +146,9 @@ char *affiche_nb_tete_joueurs(Jeu jeu);
  * @param idJoueur
  * @return unsigned short
  */
-unsigned short get_nb_carte_utilisable_joueur(Jeu jeu, short idJoueur);
+unsigned short get_nb_carte_utilisable_joueur(Jeu *jeu, short idJoueur);
 
 
-/**
- * @details Fonction qui retourne la carte la plus petite du plateau
- * @param jeu
- * @return unsigned short
- */
-unsigned short getCartePlusPetiteDuPlateau(Jeu jeu);
 
 /**
  * @brief Retourne sous forme de chaine de charactère les cartes du joueur en paramètre.
@@ -227,6 +215,15 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu);
  * @param j
  */
 void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j);
+
+/**
+ * @details Fonction qui affiche le nombre de têtes des joueurs
+ * @param jeu
+ * @return char*
+ */
+char *affiche_nb_tete_joueurs(Jeu *jeu);
+
+
 
 
 void init_jeu(Jeu *jeu) {
@@ -381,11 +378,11 @@ unsigned char get_dernier_carte_ligne(Jeu *jeu, int ligne) {
     return 0;
 }
 
-void print_tableau(Jeu jeu) {
+void print_tableau(Jeu *jeu) {
     fprintf(fichier_log, "\t\t\t\t\t\t\t\tPLATEAU:\n");
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 6; j++)
-            fprintf(fichier_log, "\t[%03d-%d]\t", jeu.plateau[i][j].numero, jeu.plateau[i][j].Tete);
+            fprintf(fichier_log, "\t[%03d-%d]\t", jeu->plateau[i][j].numero, jeu->plateau[i][j].Tete);
         fprintf(fichier_log, "\n");
     }
     fprintf(fichier_log, "\n");
@@ -454,28 +451,29 @@ char *recap_regle() {
     return res;
 }
 
+
 void distribution_carte_joueur(Jeu *jeu, Joueur *j) {
     for (int i = 0; i < 10; i++)
         j->carte[i] = get_carte_liste(jeu);
 }
 
-unsigned short get_nb_carte_utilisable_joueur(Jeu jeu, short idJoueur) {
+unsigned short get_nb_carte_utilisable_joueur(Jeu *jeu, short idJoueur) {
     unsigned short cpt = 0;
-    for (int i = 0; i < 10; i++) if (jeu.joueur[idJoueur]->carte[i]->is_used == 0) cpt++;
+    for (int i = 0; i < 10; i++) if (jeu->joueur[idJoueur]->carte[i]->is_used == 0) cpt++;
     return cpt;
 }
 
-char *min_max_defaite(Jeu jeu) {
-    unsigned short min = jeu.joueur[0]->nb_defaite, max = jeu.joueur[0]->nb_defaite;
+char *min_max_defaite(Jeu *jeu) {
+    unsigned short min = jeu->joueur[0]->nb_defaite, max = jeu->joueur[0]->nb_defaite;
     unsigned short imin = 0, imax = 0;
 
     for (int i = 0; i < nb_Joueur; i++) {
-        if (jeu.joueur[i]->nb_defaite < min) {
-            min = jeu.joueur[i]->nb_defaite;
+        if (jeu->joueur[i]->nb_defaite < min) {
+            min = jeu->joueur[i]->nb_defaite;
             imin = i;
         }
-        if (jeu.joueur[i]->nb_defaite > max) {
-            max = jeu.joueur[i]->nb_defaite;
+        if (jeu->joueur[i]->nb_defaite > max) {
+            max = jeu->joueur[i]->nb_defaite;
             imax = i;
         }
     }
@@ -495,9 +493,9 @@ char *min_max_defaite(Jeu jeu) {
     return res;
 }
 
-int moyenne_des_tetes(Jeu jeu) {
+int moyenne_des_tetes(Jeu *jeu) {
     int somme = 0;
-    for (int i = 0; i < nb_Joueur; i++) somme += jeu.joueur[i]->nb_penalite;
+    for (int i = 0; i < nb_Joueur; i++) somme += jeu->joueur[i]->nb_penalite;
     return somme / nb_Joueur;
 }
 
@@ -538,17 +536,25 @@ void force_fin_jeu() {
     exit(EXIT_SUCCESS);
 }
 
-/**
- * @details Fonction pour afficher le temps de jeu aux joueurs et dans le fichier log
- * @param duree
- */
-void affiche_temps_jeu(double duree);
+char *statistique(Jeu *jeu)
+{
 
+    char *tmp = malloc(1024 * sizeof(char));
 
-/**
- * @details Fonction utilisée par le serveur pour changer les réglages du jeu
- */
-void change_limite_jeu();
+    //DANS TERMINAL DES JOUEURS
+    snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"\n\t[STATISTIQUES]\n"RESET);
+    snprintf(tmp + strlen(tmp), 1024, "\nNombre de parties joué : %d\n", nb_partie + 1);
+    snprintf(tmp + strlen(tmp), 1024, "Nombre de tours effectué : %d\n", tour);
+    snprintf(tmp + strlen(tmp), 1024, "Moyenne des têtes obtenues : %d\n", moyenne_des_tetes(jeu));
+    snprintf(tmp + strlen(tmp), 1024, "%s", affiche_nb_tete_joueurs(jeu));
+    snprintf(tmp + strlen(tmp), 1024, "%s", min_max_defaite(jeu)); //Toujours en fin de stats
+
+    char *res = malloc(strlen(tmp) * sizeof(char));
+    strcpy(res, tmp);
+    free(tmp);
+    return res;
+}
+
 
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_JEU_H

@@ -209,7 +209,6 @@ void *joueur_pret(void *argv)
         }
         free(message);
         free(buffer);
-
     }
 
     return 0;
@@ -233,6 +232,7 @@ void jeu_play(Jeu *jeu)
         for (int i = 0; i < nb_client; i++)
             pthread_join(threads[i], NULL);
 
+        // recuperation d'un tableau de pointeur de joueurs trié en fonction de la carte qu'ils ont joué.
         Joueur **joueurs = get_ordre_joueur_tour(jeu);
 
 
@@ -242,10 +242,6 @@ void jeu_play(Jeu *jeu)
 
             for (int i = 0; i < nb_client; ++i)
             {
-
-                send_all_joueurs(clients, nb_client, "----------------------------------\n");
-                fprintf(fichier_log, "---------------------------------------------------------------\n");
-
 
                 int retour = ajoute_carte_au_plateau(jeu, joueurs[i]->carte_choisie);
                 if (retour == 0 || retour == -1)
@@ -278,14 +274,14 @@ void jeu_play(Jeu *jeu)
                     fprintf(fichier_log, "\n***FIN DE LA PARTIE***\n");
                     fprintf(fichier_log, "***NOMBRE DE TETES MAXIMAL ATTEINT***\n");
 
-                    print_tableau(*jeu); // Dans le fichier log
+                    print_tableau(jeu); // Dans le fichier log
 
                     jeu->joueur[i]->nb_defaite++;
                     isOver = 1; //Valeur qui nous fait sortir du WHILE
 
                     //Envoie des stats aux joueurs
                     char *message = malloc(1024 * sizeof(char));
-                    snprintf(message, 1024, "%s\n", statistique(*jeu));
+                    snprintf(message, 1024, "%s\n", statistique(jeu));
                     send_all_joueurs(clients, nb_client, message);
                     fprintf(fichier_log, "%s\n", message); //DANS FICHIER
                     printf("%s\n", message);//DANS TERMINAL
@@ -299,9 +295,11 @@ void jeu_play(Jeu *jeu)
                     affiche_temps_jeu(duree_partie);
                     break;
                 }
-
-                send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
             }
+            send_all_joueurs(clients, nb_client, "----------------------------------\n");
+            fprintf(fichier_log, "---------------------------------------------------------------\n");
+            send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
+
 
 
             //Cas où tous les joueurs n'ont plus de carte, on redonne des cartes et on change le tour
@@ -310,9 +308,10 @@ void jeu_play(Jeu *jeu)
                 isOver = 3;
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***MANCHE TERMINE***\n"RESET);
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***LA PARTIE CONTINUE***\n"RESET);
-                send_all_joueurs(clients, nb_client, affiche_nb_tete_joueurs(*jeu));
+                send_all_joueurs(clients, nb_client, affiche_nb_tete_joueurs(jeu));
                 free_jeu(jeu);
                 init_jeu(jeu);
+                send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
                 isOver = 0;
                 nb_Vide = 0;
                 tour++; // Incrementation du tour des joueurs
@@ -332,12 +331,12 @@ void jeu_play(Jeu *jeu)
                 fprintf(fichier_log, "\n***FIN DE LA PARTIE***\n");
                 fprintf(fichier_log, "***NOMBRE DE TOURS MAXIMAL ATTEINT***\n");
 
-                print_tableau(*jeu); // Dans le fichier log
+                print_tableau(jeu); // Dans le fichier log
                 isOver = 1; //Valeur qui nous fait sortir du WHILE
 
                 //Envoie des stats aux joueurs
                 char *message = malloc(1024 * sizeof(char));
-                snprintf(message, 1024, "%s\n", statistique(*jeu));
+                snprintf(message, 1024, "%s\n", statistique(jeu));
                 send_all_joueurs(clients, nb_client, message);
                 fprintf(fichier_log, "%s\n", message); //DANS FICHIER
                 printf("%s\n", message);//DANS TERMINAL
@@ -365,7 +364,7 @@ void jeu_play(Jeu *jeu)
             if (answer == 'y' || answer == 'Y' || answer == '\n')
             {
                 change_limite_jeu();
-                send_all_joueurs(clients, nb_client, recap_regle(*jeu));
+                send_all_joueurs(clients, nb_client, recap_regle());
                 free_jeu(jeu);
                 isOver = 0;
                 nb_partie++;
@@ -375,13 +374,10 @@ void jeu_play(Jeu *jeu)
                 send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
 
             } else if (answer == 'n' || answer == 'N' || answer == 'x')
-            {
+
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"Le serveur arrête stop le jeu...\n"RESET);
-                end_serveur();
-            }
-
+            break;
         }
-
     }
 }
 
@@ -414,6 +410,7 @@ void *listen_joueurs()
         char *buffer = (char *) malloc(1024 * sizeof(char));
 
         recv_client_data(c, buffer);
+
 
         int a = is_bot(buffer, c);
         if (a)
@@ -457,10 +454,8 @@ void *listen_joueurs()
 void send_all_joueurs(client **clients, int nb_client, char *message)
 {
     for (int i = 0; i < nb_client; ++i)
-    {
         if (clients[i]->bot_or_not == 0)
             send(clients[i]->socket, message, strlen(message), 0);
-    }
 }
 
 client *init_joueur()
@@ -497,7 +492,7 @@ void *listen_choix_carte_joueur(void *argv)
 
     client *c = (client *) argv;
 
-    if (isOver == 0 && get_nb_carte_utilisable_joueur(jeu, c->numero_joueur) > 0)
+    if (isOver == 0 && get_nb_carte_utilisable_joueur(&jeu, c->numero_joueur) > 0)
     {
 
         char *message = (char *) malloc(1024 * sizeof(char));
@@ -506,10 +501,10 @@ void *listen_choix_carte_joueur(void *argv)
         //AFFICHAGE DES INFOS DU JOUEUR
         snprintf(message + strlen(message), 1024, BOLD_CYAN"\n\t*** ROUND [%d] ***\n"RESET, tour);
         snprintf(message + strlen(message), 1024, BOLD_CYAN"\n\t*** MANCHE [%d] ***\n\n"RESET,
-                 abs(get_nb_carte_utilisable_joueur(jeu, (unsigned short) c->numero_joueur) - 10));
+                 abs(get_nb_carte_utilisable_joueur(&jeu, (unsigned short) c->numero_joueur) - 10));
         snprintf(message + strlen(message), 1024, BOLD_BLUE"Joueur %s, il vous reste %d cartes:\n"RESET,
                  c->pseudo,
-                 get_nb_carte_utilisable_joueur(jeu, (unsigned short) c->numero_joueur));
+                 get_nb_carte_utilisable_joueur(&jeu, (unsigned short) c->numero_joueur));
         snprintf(message + strlen(message), 1024, "Vous possedez %d tetes\n",
                  c->joueur[c->numero_joueur].nb_penalite);
         send(c->socket, message, strlen(message), 0);
@@ -538,6 +533,7 @@ void *listen_choix_carte_joueur(void *argv)
                     c->joueur->carte[nb - 1]->is_used = 1;
                     c->joueur->carte_choisie = c->joueur->carte[nb - 1];
 
+                    fflush(stdout);
                     printf("Le joueur %s pose sa carte %d > [%d - %d]\n", c->pseudo, nb - 1,
                            c->joueur->carte[nb - 1]->numero, c->joueur->carte[nb - 1]->Tete);
                     fprintf(fichier_log, "Le joueur %s pose sa carte %d > [%d - %d] - Possède %d têtes\n", c->pseudo,
@@ -549,7 +545,7 @@ void *listen_choix_carte_joueur(void *argv)
         }
 
         //Si joueur n'a pas de carte, on incremente le nombre de joueur n'ayant pas de carte
-        if (get_nb_carte_utilisable_joueur(jeu, c->numero_joueur) == 0)
+        if (get_nb_carte_utilisable_joueur(&jeu, c->numero_joueur) == 0)
         {
             nb_Vide++;
         }
@@ -563,7 +559,7 @@ void *listen_choix_carte_bot(void *argv)
 {
     client *c = (client *) argv;
 
-    if (isOver == 0 && get_nb_carte_utilisable_joueur(jeu, c->numero_joueur) > 0)
+    if (isOver == 0 && get_nb_carte_utilisable_joueur(&jeu, c->numero_joueur) > 0)
     {
         char *buffer = (char *) malloc(1024 * sizeof(char));
 
@@ -577,26 +573,14 @@ void *listen_choix_carte_bot(void *argv)
                 if (c->joueur->carte[i]->is_used == 0)
                 {
                     message[compteur] = "0123456789"[i];
-//                    printf("%s - %c\n", message, "0123456789"[i]);
-                    fflush(stdout);
                     compteur++;
                 }
             }
             message[compteur] = '\0';
 
-
-            printf("%s - %lu - %u\n", message, strlen(message), compteur);
-            fflush(stdout);
-
-
             send(c->socket, message, compteur, 0);
-            fflush(stdout);
-
 
             recv_client_data(c, buffer);
-//            printf("carte : %s\n", buffer);
-            fflush(stdout);
-//            sleep(5);
 
             int nb = atoi(buffer);
             if (nb > 10 || nb < 0)
@@ -604,24 +588,16 @@ void *listen_choix_carte_bot(void *argv)
                 continue;
             } else
             {
-                if (c->joueur->carte[nb]->is_used == 1)
-                {
-                } else
+                if (c->joueur->carte[nb]->is_used == 0)
                 {
                     c->joueur->carte[nb]->is_used = 1;
                     c->joueur->carte_choisie = c->joueur->carte[nb];
 
-                    if (c->bot_or_not)
-                    {
-                        printf("Le bot %s pose sa carte %d > [%d - %d]\n", c->pseudo, nb,
-                               c->joueur->carte[nb]->numero, c->joueur->carte[nb]->Tete);
-                    } else
-                    {
-                        printf("Le joueur %s pose sa carte %d > [%d - %d]\n", c->pseudo, nb,
-                               c->joueur->carte[nb]->numero, c->joueur->carte[nb]->Tete);
-                    }
+                    fflush(stdout);
+                    printf("Le bot %s pose sa carte %d > [%d - %d]\n", c->pseudo, nb,
+                           c->joueur->carte[nb]->numero, c->joueur->carte[nb]->Tete);
 
-                    fprintf(fichier_log, "Le joueur %s pose sa carte %d > [%d - %d] - Possède %d têtes\n", c->pseudo,
+                    fprintf(fichier_log, "Le bot %s pose sa carte %d > [%d - %d] - Possède %d têtes\n", c->pseudo,
                             nb, c->joueur->carte[nb]->numero, c->joueur->carte[nb]->Tete,
                             c->joueur[c->numero_joueur].nb_penalite);
                     break;
@@ -629,11 +605,9 @@ void *listen_choix_carte_bot(void *argv)
             }
         }
 
-        //Si joueur n'a pas de carte, on incremente le nombre de joueur n'ayant pas de carte
-        if (get_nb_carte_utilisable_joueur(jeu, c->numero_joueur) == 0)
-        {
+        //Si bot n'a pas de carte, on incremente le nombre de joueur n'ayant pas de carte
+        if (get_nb_carte_utilisable_joueur(&jeu, c->numero_joueur) == 0)
             nb_Vide++;
-        }
 
         free(buffer);
     }
@@ -778,8 +752,24 @@ void end_serveur()
     fflush(stdout);
     fflush(stdin);
     printf(RESET);
-    exit(EXIT_SUCCESS);
+    free_serveur();
 }
+
+char *affiche_nb_tete_joueurs(Jeu *jeu)
+{
+    char *tmp = malloc(512 * nb_Joueur * sizeof(char));
+    for (short i = 0; i < nb_Joueur; i++)
+        snprintf(tmp + strlen(tmp), 512, "Le joueur %s possède %d têtes \n", clients[i]->pseudo,
+                 jeu->joueur[i]->nb_penalite);
+
+    fprintf(fichier_log, "\n");
+
+    char *res = malloc(strlen(tmp) * sizeof(char));
+    strcpy(res, tmp);
+    free(tmp);
+    return res;
+}
+
 
 void ajout_bot()
 {
@@ -791,40 +781,6 @@ void ajout_bot()
     char *args[] = {nom_programme, port, "127.0.0.1", NULL};
 
     if (x == 0) execv(nom_programme, args);
-}
-
-char *statistique(Jeu jeu)
-{
-
-    char *tmp = malloc(1024 * sizeof(char));
-
-    //DANS TERMINAL DES JOUEURS
-    snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"\n\t[STATISTIQUES]\n"RESET);
-    snprintf(tmp + strlen(tmp), 1024, "\nNombre de parties joué : %d\n", nb_partie + 1);
-    snprintf(tmp + strlen(tmp), 1024, "Nombre de tours effectué : %d\n", tour);
-    snprintf(tmp + strlen(tmp), 1024, "Moyenne des têtes obtenues : %d\n", moyenne_des_tetes(jeu));
-    snprintf(tmp + strlen(tmp), 1024, "%s", affiche_nb_tete_joueurs(jeu));
-    snprintf(tmp + strlen(tmp), 1024, "%s", min_max_defaite(jeu)); //Toujours en fin de stats
-
-    char *res = malloc(strlen(tmp) * sizeof(char));
-    strcpy(res, tmp);
-    free(tmp);
-    return res;
-}
-
-char *affiche_nb_tete_joueurs(Jeu jeu)
-{
-    char *tmp = malloc(512 * nb_Joueur * sizeof(char));
-    for (short i = 0; i < nb_Joueur; i++)
-        snprintf(tmp + strlen(tmp), 512, "Le joueur %s possède %d têtes \n", clients[i]->pseudo,
-                 jeu.joueur[i]->nb_penalite);
-
-    fprintf(fichier_log, "\n");
-
-    char *res = malloc(strlen(tmp) * sizeof(char));
-    strcpy(res, tmp);
-    free(tmp);
-    return res;
 }
 
 int is_bot(char *nom, client *c)
@@ -846,4 +802,18 @@ int is_bot(char *nom, client *c)
         return 1;
     }
     return 0;
+}
+
+
+void free_serveur()
+{
+    for (int i = 0; i < nb_client; ++i)
+    {
+        if (clients[i] != NULL)
+            free(clients[i]);
+        if (jeu.joueur[i] != NULL)
+            free(jeu.joueur[i]);
+    }
+    if (jeu.plateau != NULL)
+        free_jeu(&jeu);
 }
