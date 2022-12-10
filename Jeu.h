@@ -562,12 +562,20 @@ char *statistique(Jeu *jeu)
     snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"\n\t[STATISTIQUES]\n"RESET);
     snprintf(tmp + strlen(tmp), 1024, "\nNombre de parties joué : %d\n", nb_partie + 1);
     snprintf(tmp + strlen(tmp), 1024, "Nombre de tours effectué : %d\n", tour);
+
     snprintf(tmp + strlen(tmp), 1024, "Moyenne des têtes obtenues : %d\n", moyenne_des_tetes(jeu));
-    snprintf(tmp + strlen(tmp), 1024, "%s", affiche_nb_tete_joueurs(jeu));
-    snprintf(tmp + strlen(tmp), 1024, "%s", min_max_defaite(jeu)); //Toujours en fin de stats
+
+    char *tete = affiche_nb_tete_joueurs(jeu);
+    snprintf(tmp + strlen(tmp), 1024, "%s", tete);
+
+    char *def = min_max_defaite(jeu);
+    snprintf(tmp + strlen(tmp), 1024, "%s", def); //Toujours en fin de stats
 
     char *res = malloc(strlen(tmp) * sizeof(char));
     strcpy(res, tmp);
+
+    free(tete);
+    free(def);
     free(tmp);
     return res;
 }
