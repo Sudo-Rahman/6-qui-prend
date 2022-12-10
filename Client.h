@@ -37,27 +37,6 @@ void *listen_all_time(void *);
  * @details Fonction de gestion des signaux du programme
  * @param signal_recu
  */
-void gestion_signaux_client(int signal_recu)
-{
-
-    switch (signal_recu)
-    {
-
-        //SIGNAL CTRL + C
-        case SIGINT:
-            printf(BOLD_MAGENTA"\nVous avez quitté la partie\nAu revoir\n"RESET);
-            exit(0);
-
-            //SIGNAL POUR ARRETER PROGRAMME
-        case SIGTERM:
-            printf(BOLD_YELLOW"\nSIGNAL SIGTERM RECU\n"RESET);
-            printf(BOLD_MAGENTA"\nVous avez quitté la partie\nAu revoir\n"RESET);
-            exit(0);
-
-        default:
-            printf(BOLD_YELLOW"\nSIGNAL RECU > %d\n"RESET, signal_recu);
-            break;
-    }
-}
+void gestion_signaux_client(int signal_recu);
 
 #endif //SYSTEMES_ET_RESEAUX_PROJET_CLIENT_H

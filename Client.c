@@ -105,3 +105,26 @@ void *listen_all_time(void *argv)
         fflush(stdout);
     }
 }
+
+void gestion_signaux_client(int signal_recu)
+{
+
+    switch (signal_recu)
+    {
+
+        //SIGNAL CTRL + C
+        case SIGINT:
+            printf(BOLD_MAGENTA"\nVous avez quitté la partie\nAu revoir\n"RESET);
+            exit(0);
+
+        //SIGNAL POUR ARRETER PROGRAMME
+        case SIGTERM:
+            printf(BOLD_YELLOW"\nSIGNAL SIGTERM RECU\n"RESET);
+            printf(BOLD_MAGENTA"\nVous avez quitté la partie\nAu revoir\n"RESET);
+            exit(0);
+
+        default:
+            printf(BOLD_YELLOW"\nSIGNAL RECU > %d\n"RESET, signal_recu);
+            break;
+    }
+}

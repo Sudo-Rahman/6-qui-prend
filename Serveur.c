@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 
     //Tant que conditions pour lancer le jeu sont pas bonnes, on attends
     while (all_joueur_pret() != 1)
-    {}
+    { usleep((useconds_t) .1); }
 
 
     send_all_joueurs(clients, nb_client, BOLD_GREEN"\nTous les joueurs sont prêt la partie va commencer...\n"RESET);
@@ -142,7 +142,6 @@ int main(int argc, char **argv)
     jeu_play(&jeu);
 
     end_serveur();
-    return EXIT_SUCCESS;
 }
 
 
@@ -483,7 +482,6 @@ int all_joueur_pret()
     //Si tous les joueurs sont prets et que le nombre est bon le jeu commence
     if (compteur == nb_client && compteur >= MIN_JOUEURS) return 1;
 
-    usleep((useconds_t) .1);
     return 0;
 }
 
@@ -753,6 +751,7 @@ void end_serveur()
     fflush(stdin);
     printf(RESET);
     free_serveur();
+    exit(EXIT_SUCCESS);
 }
 
 char *affiche_nb_tete_joueurs(Jeu *jeu)
