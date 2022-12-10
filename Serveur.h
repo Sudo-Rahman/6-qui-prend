@@ -26,7 +26,6 @@ int PORT = 65534;
 
 typedef struct
 {
-    char *pseudo;
     short numero_joueur;
     short socket;
     short pret;
@@ -52,7 +51,7 @@ void *listen_joueurs();
 /**
  * @brief Fonction qui envoie le message en paramêtre à tous les joueurs.
  * @param joueurs
- * @param nb_joueur
+ * @param nb_clients
  * @param message
  */
 void send_all_joueurs(client **clients, int nb_clients, char *message);
@@ -85,8 +84,8 @@ void *listen_choix_carte_joueur(void *);
 void *listen_choix_carte_bot(void *);
 
 /**
- * @details Ecoute du client mis en paramètre si celui qui le serveur la partie s'arrête et tous les clients sont déconnecter du serveur.
- * @param argv
+ * @details Fonction appelé quand un joueur quitte la partie.
+ * @param c
  * @return void
  */
 void client_quit(client *c);
@@ -99,6 +98,7 @@ void close_all_clients();
 /**
  * @details Fonction qui écoute le client en paramètre et retourne les données envoyer par le client.
  * @param c
+ * @param buffer
  * @return chaine de caractère.
  */
 void recv_client_data(client *c, char *buffer);
@@ -117,7 +117,7 @@ int carte_trop_petite(client *c);
 void jeu_play(Jeu *jeu);
 
 /**
- * @details Met fin au serveur, close les clients et le serveur.
+ * @details Met fin au serveur.
  */
 void end_serveur();
 

@@ -8,7 +8,7 @@
 #include <pthread.h>
 
 int sock;
-char pseudo[1024];
+char pseudo[64];
 
 
 // ******** //

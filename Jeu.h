@@ -13,7 +13,7 @@
 #include "Color.h"
 
 #define MAX_JOUEURS 10
-#define MIN_JOUEURS 1
+#define MIN_JOUEURS 2
 
 
 typedef struct Carte {
@@ -21,6 +21,7 @@ typedef struct Carte {
 } Carte;
 
 typedef struct Joueur {
+    char pseudo[64];
     unsigned short nb_penalite, nb_defaite;
     Carte *carte[10];
     Carte *carte_choisie;
@@ -34,7 +35,7 @@ typedef struct Jeu {
 } Jeu;
 
 unsigned int tour = 1, nb_partie = 0, nb_tete_max = 66, nb_manche_max = 999;
-unsigned char isOver = 0, nb_Joueur = 0, nb_bot = 0,nb_pret = 0;
+unsigned char isOver = 0, nb_joueur = 0, nb_bot = 0,nb_pret = 0;
 double duree_total = 0;
 
 FILE *fichier_log;
@@ -234,11 +235,11 @@ void init_jeu(Jeu *jeu) {
     for (int i = 0; i < 104; i++) jeu->liste_carte[i] = create_carte(i + 1);
 
     //SI c'est la premiere partie, on initialise le nombre de défaites à 0.
-    if (nb_partie == 0) for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_defaite = 0;
+    if (nb_partie == 0) for (int i = 0; i < nb_joueur; i++) jeu->joueur[i]->nb_defaite = 0;
 
     //Nombre de têtes à 0 vu que le jeu commence et si jeu pas terminé on ne remet pas les têtes à 0.
     if (isOver == 0) {
-        for (int i = 0; i < nb_Joueur; i++) jeu->joueur[i]->nb_penalite = 0;
+        for (int i = 0; i < nb_joueur; i++) jeu->joueur[i]->nb_penalite = 0;
     }
 
     //On initialise le plateau à 0.
@@ -283,12 +284,12 @@ void creation_premiere_colonne_plateau(Jeu *jeu) {
 }
 
 Joueur **get_ordre_joueur_tour(Jeu *jeu) {
-    Joueur **joueurs = (Joueur **) malloc(nb_Joueur * sizeof(Joueur *));
+    Joueur **joueurs = (Joueur **) malloc(nb_joueur * sizeof(Joueur *));
 
-    for (int i = 0; i < nb_Joueur; ++i) joueurs[i] = jeu->joueur[i];
+    for (int i = 0; i < nb_joueur; ++i) joueurs[i] = jeu->joueur[i];
 
-    for (int j = 1; j <= nb_Joueur; j++) {
-        for (int i = 0; i < nb_Joueur - 1; i++) {
+    for (int j = 1; j <= nb_joueur; j++) {
+        for (int i = 0; i < nb_joueur - 1; i++) {
             if (joueurs[i]->carte_choisie->numero > joueurs[i + 1]->carte_choisie->numero) {
                 Joueur *jo = joueurs[i];
                 joueurs[i] = joueurs[i + 1];
@@ -426,7 +427,7 @@ char *affiche_cartes_joueur(Joueur *joueur) {
 
 
 void distribution_carte_joueurs(Jeu *jeu) {
-    for (int i = 0; i < nb_Joueur; i++)
+    for (int i = 0; i < nb_joueur; i++)
         distribution_carte_joueur(jeu, jeu->joueur[i]);
 }
 
@@ -440,7 +441,7 @@ char *recap_regle() {
     snprintf(tmp + strlen(tmp), 1024, "\nLe nombre de tours maximal est de ");
     snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_manche_max);
     snprintf(tmp + strlen(tmp), 1024, "Nombre de joueurs total bot confondu : ");
-    snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_Joueur);
+    snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_joueur);
     snprintf(tmp + strlen(tmp), 1024, "Nombre de bots: ");
     snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_bot);
 
@@ -467,7 +468,7 @@ char *min_max_defaite(Jeu *jeu) {
     unsigned short min = jeu->joueur[0]->nb_defaite, max = jeu->joueur[0]->nb_defaite;
     unsigned short imin = 0, imax = 0;
 
-    for (int i = 0; i < nb_Joueur; i++) {
+    for (int i = 0; i < nb_joueur; i++) {
         if (jeu->joueur[i]->nb_defaite < min) {
             min = jeu->joueur[i]->nb_defaite;
             imin = i;
@@ -493,10 +494,26 @@ char *min_max_defaite(Jeu *jeu) {
     return res;
 }
 
+char *affiche_nb_tete_joueurs(Jeu *jeu)
+{
+    char *tmp = malloc(512 * nb_joueur * sizeof(char));
+    for (short i = 0; i < nb_joueur; i++)
+        snprintf(tmp + strlen(tmp), 512, "Le joueur %s possède %d têtes \n", jeu->joueur[i]->pseudo,
+                 jeu->joueur[i]->nb_penalite);
+
+    fprintf(fichier_log, "\n");
+
+    char *res = malloc(strlen(tmp) * sizeof(char));
+    strcpy(res, tmp);
+    free(tmp);
+    return res;
+}
+
+
 int moyenne_des_tetes(Jeu *jeu) {
     int somme = 0;
-    for (int i = 0; i < nb_Joueur; i++) somme += jeu->joueur[i]->nb_penalite;
-    return somme / nb_Joueur;
+    for (int i = 0; i < nb_joueur; i++) somme += jeu->joueur[i]->nb_penalite;
+    return somme / nb_joueur;
 }
 
 int AskNombreUser(int min, int max) {

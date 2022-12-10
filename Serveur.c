@@ -168,17 +168,17 @@ void *joueur_pret(void *argv)
             {
                 c->pret = 1;
                 nb_pret++;
-                snprintf(message, 1024, BOLD_GREEN"Le joueur %s à mis prêt [%d/%d]\n"RESET, c->pseudo, nb_pret,
-                         nb_Joueur);
+                snprintf(message, 1024, BOLD_GREEN"Le joueur %s à mis prêt [%d/%d]\n"RESET, c->joueur->pseudo, nb_pret,
+                         nb_joueur);
                 send_all_joueurs(clients, nb_client, message);
 
                 //Nombre de joueur pas encore prêt
-                if (nb_pret != nb_Joueur) send_all_joueurs(clients, nb_client, "En attente des autres joueurs...\n");
+                if (nb_pret != nb_joueur) send_all_joueurs(clients, nb_client, "En attente des autres joueurs...\n");
                     //Si il manque encore des joueurs pour lancer la partie
-                else if (nb_Joueur < MIN_JOUEURS)
+                else if (nb_joueur < MIN_JOUEURS)
                 {
                     snprintf(message, 1024, BOLD_YELLOW"Il manque encore %d joueur pour commencer la partie\n"RESET,
-                             MIN_JOUEURS - nb_Joueur);
+                             MIN_JOUEURS - nb_joueur);
                     send_all_joueurs(clients, nb_client, message);
                 }
                 while (nb_pret < MIN_JOUEURS)
@@ -256,7 +256,7 @@ void jeu_play(Jeu *jeu)
                     if (retour == -1)
                         ligne = carte_trop_petite(c);
                     place_carte_si_trop_petite_ou_derniere_ligne(jeu, ligne, c->joueur);
-                    printf("joueur : %s tete : %i\n", clients[i]->pseudo, c->joueur->nb_penalite);
+                    printf("joueur : %s tete : %i\n", clients[i]->joueur->pseudo, c->joueur->nb_penalite);
                     fflush(stdout);
                 }
 
@@ -302,7 +302,7 @@ void jeu_play(Jeu *jeu)
 
 
             //Cas où tous les joueurs n'ont plus de carte, on redonne des cartes et on change le tour
-            if (nb_Vide == nb_Joueur)
+            if (nb_Vide == nb_joueur)
             {
                 isOver = 3;
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***MANCHE TERMINE***\n"RESET);
@@ -418,21 +418,21 @@ void *listen_joueurs()
             continue;
         }
 
-        strcpy(c->pseudo, buffer);
+        strcpy(c->joueur->pseudo, buffer);
 
-        printf("Connection réalisé avec le joueur %s\n", c->pseudo);
+        printf("Connection réalisé avec le joueur %s\n", c->joueur->pseudo);
         snprintf(message, 1024, "Vous avez rejoint le serveur, vous êtes le joueur n°%u\n", nb_client + 1);
         send(client_socket, message, strlen(message), 0);
 
-        snprintf(message, 1024, "Le joueur : %s vient de se connecter.", c->pseudo);
-        fprintf(fichier_log, "Le joueur : %s vient de se connecter.\n", c->pseudo);
+        snprintf(message, 1024, "Le joueur : %s vient de se connecter.", c->joueur->pseudo);
+        fprintf(fichier_log, "Le joueur : %s vient de se connecter.\n", c->joueur->pseudo);
 
         send_all_joueurs(clients, nb_client, message);
 
         clients[nb_client] = c;
 
         nb_client++;
-        nb_Joueur++;
+        nb_joueur++;
 
         if (nb_client == MAX_JOUEURS)
         {
@@ -460,7 +460,6 @@ void send_all_joueurs(client **clients, int nb_client, char *message)
 client *init_joueur()
 {
     client *c = (client *) malloc(sizeof(client));
-    c->pseudo = (char *) calloc(128, sizeof(char));
     c->pret = 0;
     c->bot_or_not = 0;
     c->joueur = (Joueur *) malloc(sizeof(Joueur));
@@ -501,7 +500,7 @@ void *listen_choix_carte_joueur(void *argv)
         snprintf(message + strlen(message), 1024, BOLD_CYAN"\n\t*** MANCHE [%d] ***\n\n"RESET,
                  abs(get_nb_carte_utilisable_joueur(&jeu, (unsigned short) c->numero_joueur) - 10));
         snprintf(message + strlen(message), 1024, BOLD_BLUE"Joueur %s, il vous reste %d cartes:\n"RESET,
-                 c->pseudo,
+                 c->joueur->pseudo,
                  get_nb_carte_utilisable_joueur(&jeu, (unsigned short) c->numero_joueur));
         snprintf(message + strlen(message), 1024, "Vous possedez %d tetes\n",
                  c->joueur[c->numero_joueur].nb_penalite);
@@ -532,9 +531,9 @@ void *listen_choix_carte_joueur(void *argv)
                     c->joueur->carte_choisie = c->joueur->carte[nb - 1];
 
                     fflush(stdout);
-                    printf("Le joueur %s pose sa carte %d > [%d - %d]\n", c->pseudo, nb - 1,
+                    printf("Le joueur %s pose sa carte %d > [%d - %d]\n", c->joueur->pseudo, nb - 1,
                            c->joueur->carte[nb - 1]->numero, c->joueur->carte[nb - 1]->Tete);
-                    fprintf(fichier_log, "Le joueur %s pose sa carte %d > [%d - %d] - Possède %d têtes\n", c->pseudo,
+                    fprintf(fichier_log, "Le joueur %s pose sa carte %d > [%d - %d] - Possède %d têtes\n", c->joueur->pseudo,
                             nb - 1, c->joueur->carte[nb - 1]->numero, c->joueur->carte[nb - 1]->Tete,
                             c->joueur[c->numero_joueur].nb_penalite);
                     break;
@@ -592,10 +591,10 @@ void *listen_choix_carte_bot(void *argv)
                     c->joueur->carte_choisie = c->joueur->carte[nb];
 
                     fflush(stdout);
-                    printf("Le bot %s pose sa carte %d > [%d - %d]\n", c->pseudo, nb,
+                    printf("Le bot %s pose sa carte %d > [%d - %d]\n", c->joueur->pseudo, nb,
                            c->joueur->carte[nb]->numero, c->joueur->carte[nb]->Tete);
 
-                    fprintf(fichier_log, "Le bot %s pose sa carte %d > [%d - %d] - Possède %d têtes\n", c->pseudo,
+                    fprintf(fichier_log, "Le bot %s pose sa carte %d > [%d - %d] - Possède %d têtes\n", c->joueur->pseudo,
                             nb, c->joueur->carte[nb]->numero, c->joueur->carte[nb]->Tete,
                             c->joueur[c->numero_joueur].nb_penalite);
                     break;
@@ -614,8 +613,8 @@ void *listen_choix_carte_bot(void *argv)
 void client_quit(client *c)
 {
     char *mess = (char *) malloc(128 * sizeof(char));
-    snprintf(mess, strlen(mess), BOLD_YELLOW"\nLe client %s a quitté la partie\n"RESET, c->pseudo);
-    fprintf(fichier_log, "\nLe client %s a quitté la partie\n", c->pseudo);
+    snprintf(mess, strlen(mess), BOLD_YELLOW"\nLe client %s a quitté la partie\n"RESET, c->joueur->pseudo);
+    fprintf(fichier_log, "\nLe client %s a quitté la partie\n", c->joueur->pseudo);
     printf("%s\n", mess);
     send_all_joueurs(clients, nb_client, mess);
     free(mess);
@@ -680,8 +679,8 @@ int carte_trop_petite(client *c)
     free(message);
     free(buffer);
 
-    printf("Le joueur %s choisit de prendre la ligne %d complète\n", c->pseudo, nb - 1);
-    fprintf(fichier_log, "Le joueur %s choisit de prendre la ligne %d complète\n", c->pseudo, nb - 1);
+    printf("Le joueur %s choisit de prendre la ligne %d complète\n", c->joueur->pseudo, nb - 1);
+    fprintf(fichier_log, "Le joueur %s choisit de prendre la ligne %d complète\n", c->joueur->pseudo, nb - 1);
     return nb - 1;
 }
 
@@ -754,22 +753,6 @@ void end_serveur()
     exit(EXIT_SUCCESS);
 }
 
-char *affiche_nb_tete_joueurs(Jeu *jeu)
-{
-    char *tmp = malloc(512 * nb_Joueur * sizeof(char));
-    for (short i = 0; i < nb_Joueur; i++)
-        snprintf(tmp + strlen(tmp), 512, "Le joueur %s possède %d têtes \n", clients[i]->pseudo,
-                 jeu->joueur[i]->nb_penalite);
-
-    fprintf(fichier_log, "\n");
-
-    char *res = malloc(strlen(tmp) * sizeof(char));
-    strcpy(res, tmp);
-    free(tmp);
-    return res;
-}
-
-
 void ajout_bot()
 {
 
@@ -790,14 +773,14 @@ int is_bot(char *nom, client *c)
         c->pret = 1;
         nb_pret++;
         c->bot_or_not = 1;
-        snprintf(c->pseudo, 64, "bot n°%d", nb_ia);
+        snprintf(c->joueur->pseudo, 64, "bot n°%d", nb_ia);
         nb_bot++;
         nb_ia++;
         clients[nb_client] = c;
         send_all_joueurs(clients, nb_client, BOLD_YELLOW"Un bot a été ajouté\n"RESET);
         fprintf(fichier_log, "Un bot a été ajouté\n");
         nb_client++;
-        nb_Joueur++;
+        nb_joueur++;
         return 1;
     }
     return 0;
