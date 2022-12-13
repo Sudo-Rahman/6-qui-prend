@@ -222,7 +222,7 @@ void place_carte_si_trop_petite_ou_derniere_ligne(Jeu *jeu, int ligne, Joueur *j
  * @param jeu
  * @return char*
  */
-char *affiche_nb_tete_joueurs(Jeu *jeu);
+void affiche_nb_tete_joueurs(Jeu *jeu,char * buffer);
 
 
 
@@ -494,19 +494,16 @@ char *min_max_defaite(Jeu *jeu) {
     return res;
 }
 
-char *affiche_nb_tete_joueurs(Jeu *jeu)
+void affiche_nb_tete_joueurs(Jeu *jeu,char * buffer)
 {
-    char *tmp = malloc(512 * nb_joueur * sizeof(char));
+    char tmp[1024];
     for (short i = 0; i < nb_joueur; i++)
         snprintf(tmp + strlen(tmp), 512, "Le joueur %s possède %d têtes \n", jeu->joueur[i]->pseudo,
                  jeu->joueur[i]->nb_penalite);
 
     fprintf(fichier_log, "\n");
 
-    char *res = malloc(strlen(tmp) * sizeof(char));
-    strcpy(res, tmp);
-    free(tmp);
-    return res;
+    strcpy(buffer, tmp);
 }
 
 
@@ -565,7 +562,8 @@ char *statistique(Jeu *jeu)
 
     snprintf(tmp + strlen(tmp), 1024, "Moyenne des têtes obtenues : %d\n", moyenne_des_tetes(jeu));
 
-    char *tete = affiche_nb_tete_joueurs(jeu);
+    char tete[1024];
+    affiche_nb_tete_joueurs(jeu,tete);
     snprintf(tmp + strlen(tmp), 1024, "%s", tete);
 
     char *def = min_max_defaite(jeu);

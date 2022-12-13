@@ -320,9 +320,9 @@ void jeu_play(Jeu *jeu)
                 isOver = 3;
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***MANCHE TERMINE***\n"RESET);
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***LA PARTIE CONTINUE***\n"RESET);
-                char *tete = affiche_nb_tete_joueurs(jeu);
+                char tete[1024];
+                affiche_nb_tete_joueurs(jeu,tete);
                 send_all_joueurs(clients, nb_client, tete);
-                free(tete);
 
                 free_jeu(jeu);
                 init_jeu(jeu);
