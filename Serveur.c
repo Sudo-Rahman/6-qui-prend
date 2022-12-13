@@ -9,7 +9,6 @@
 #include <pthread.h>
 #include <time.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "Serveur.h"
@@ -134,13 +133,13 @@ int main(int argc, char **argv)
 
     init_jeu(&jeu);
 
-    char *recap = recap_regle();
+    char recap[1024];
+    recap_regle(recap);
     send_all_joueurs(clients, nb_client, recap);
-    free(recap);
 
-    char *plateau = affiche_plateau(&jeu);
+    char plateau[1024];
+    affiche_plateau(&jeu,plateau);
     send_all_joueurs(clients, nb_client, plateau);
-    free(plateau);
 
     gettimeofday(&begin, 0); //Initialisation du temps quand le jeu commence
 
@@ -289,9 +288,9 @@ void jeu_play(Jeu *jeu)
                     //Envoie des stats aux joueurs
                     char *message = malloc(1024 * sizeof(char));
 
-                    char *stats = statistique(jeu);
+                    char stats[1024];
+                    statistique(jeu, stats);
                     snprintf(message, 1024, "%s\n", stats);
-                    free(stats);
 
                     send_all_joueurs(clients, nb_client, message);
                     fprintf(fichier_log, "%s\n", message); //DANS FICHIER
@@ -309,9 +308,9 @@ void jeu_play(Jeu *jeu)
             }
             send_all_joueurs(clients, nb_client, "----------------------------------\n");
             fprintf(fichier_log, "---------------------------------------------------------------\n");
-            char *plateau = affiche_plateau(jeu);
+            char plateau[1024];
+            affiche_plateau(jeu,plateau);
             send_all_joueurs(clients, nb_client, plateau);
-            free(plateau);
 
 
             //Cas où tous les joueurs n'ont plus de carte, on redonne des cartes et on change le tour
@@ -327,9 +326,9 @@ void jeu_play(Jeu *jeu)
                 free_jeu(jeu);
                 init_jeu(jeu);
 
-                char *plateau = affiche_plateau(jeu);
+                char plateau[1024];
+                affiche_plateau(jeu,plateau);
                 send_all_joueurs(clients, nb_client, plateau);
-                free(plateau);
                 isOver = 0;
                 nb_Vide = 0;
                 tour++; // Incrementation du tour des joueurs
@@ -355,9 +354,9 @@ void jeu_play(Jeu *jeu)
                 //Envoie des stats aux joueurs
                 char message[1024];
 
-                char *stats = statistique(jeu);
+                char stats[1024];
+                statistique(jeu, stats);
                 snprintf(message, 1024, "%s\n", stats);
-                free(stats);
 
                 send_all_joueurs(clients, nb_client, message);
                 fprintf(fichier_log, "%s\n", message); //DANS FICHIER
@@ -384,9 +383,9 @@ void jeu_play(Jeu *jeu)
             {
                 change_limite_jeu();
 
-                char *recap = recap_regle();
+                char recap[1024];
+                recap_regle(recap);
                 send_all_joueurs(clients, nb_client, recap);
-                free(recap);
 
                 free_jeu(jeu);
                 isOver = 0;
@@ -395,9 +394,9 @@ void jeu_play(Jeu *jeu)
                 send_all_joueurs(clients, nb_client, BOLD_GREEN"La partie va commencer...\n"RESET);
                 printf(BOLD_GREEN"La partie va commencer...\n"RESET);
 
-                char *plateau = affiche_plateau(jeu);
+                char plateau[1024];
+                affiche_plateau(jeu,plateau);
                 send_all_joueurs(clients, nb_client, plateau);
-                free(plateau);
 
             } else if (answer == 'n' || answer == 'N' || answer == 'x')
             {
@@ -532,9 +531,9 @@ void *listen_choix_carte_joueur(void *argv)
                  c->joueur[c->numero_joueur].nb_penalite);
         send(c->socket, message, strlen(message), 0);
 
-        char *ch = affiche_cartes_joueur(c->joueur);
+        char ch[1024];
+        affiche_cartes_joueur(c->joueur, ch);
         strcpy(message, ch);
-        free(ch);
         send(c->socket, message, strlen(message), 0);
 
         //BOUCLE DE SAISIE DE LA CARTE
@@ -730,15 +729,14 @@ void gestion_signaux_serveur(int signal_recu)
 
 void affiche_temps_jeu(double duree)
 {
-    char *message = malloc(512 * sizeof(char));
-    printf("Durée de la partie [%f] > %.3f secondes\n", duree);
+    char message[1024];
+    printf("Durée de la partie n°[%u] > %.3f secondes\n",nb_partie +1,duree);
     printf("Temps de jeu total :  %.3f secondes\n", duree_total);
-    fprintf(fichier_log, "Durée de la partie [%f] > %.3f secondes\n", duree);
+    fprintf(fichier_log, "Durée de la partie n°[%u] > %.3f secondes\n",nb_partie +1, duree);
     fprintf(fichier_log, "Temps de jeu total :  %.3f secondes\n", duree_total);
-    snprintf(message, 1024, "Durée de la partie [%d] > %.3f secondes\n", duree);
+    snprintf(message, 1024, "Durée de la partie n°[%u] > %.3f secondes\n",nb_partie+1, duree);
     snprintf(message + strlen(message), 1024, "Temps de jeu total :  %.3f secondes\n", duree_total);
     send_all_joueurs(clients, nb_client, message);
-    free(message);
 }
 
 void change_limite_jeu()

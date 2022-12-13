@@ -60,7 +60,7 @@ Carte **cree_plateau();
  * @param jeu
  * @return char*
  */
-char *affiche_plateau(Jeu *jeu);
+void affiche_plateau(Jeu *jeu, char *buffer);
 
 /**
  * @details Fonction pour libérer de la mémoire la matrice de carte
@@ -74,7 +74,7 @@ void free_jeu(Jeu *jeu);
  * @param jeu
  * @return char*
  */
-char *recap_regle();
+void recap_regle(char * buffer);
 
 
 /**
@@ -82,7 +82,7 @@ char *recap_regle();
  * @param jeu
  * @return char*
  */
-char *statistique(Jeu *jeu);
+void statistique(Jeu *jeu, char * buffer);
 
 /**
  * @details Fonction qui fait la moyenne des têtes
@@ -96,7 +96,7 @@ int moyenne_des_tetes(Jeu *jeu);
  * @param jeu
  * @return char*
  */
-char *min_max_defaite(Jeu *jeu);
+void min_max_defaite(Jeu *jeu,char * buffer);
 
 /**
  * @details Fonction pour afficher le tableau dans un fichier log
@@ -154,9 +154,9 @@ unsigned short get_nb_carte_utilisable_joueur(Jeu *jeu, short idJoueur);
 /**
  * @brief Retourne sous forme de chaine de charactère les cartes du joueur en paramètre.
  * @param joueur
- * @return La liste des cartes du Joueur joueur.
+ * @return La liste des cartes du joueur en parametre.
  */
-char *affiche_cartes_joueur(Joueur *joueur);
+void affiche_cartes_joueur(Joueur *joueur, char * buffer);
 
 
 /**
@@ -249,7 +249,6 @@ void init_jeu(Jeu *jeu) {
     //Carte de la premiere colonne du plateau distribué
     creation_premiere_colonne_plateau(jeu);
     distribution_carte_joueurs(jeu);
-//    affiche_plateau(jeu);
 }
 
 void free_jeu(Jeu *jeu) {
@@ -301,8 +300,8 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu) {
     return joueurs;
 }
 
-char *affiche_plateau(Jeu *jeu) {
-    char *res = (char *) calloc(1024, sizeof(char));
+void affiche_plateau(Jeu *jeu, char * buffer) {
+    char res[1024];
 
     snprintf(res, 1024, BOLD_HIGH_WHITE"\t\t\t\t\t\tPLATEAU:\n"RESET);
 
@@ -313,7 +312,7 @@ char *affiche_plateau(Jeu *jeu) {
                      jeu->plateau[i][j].Tete);
         snprintf(res + strlen(res), 1024, "\n");
     }
-    return res;
+    strcpy(buffer,res);
 }
 
 unsigned char get_pos_carte_derniere_ligne(Jeu *jeu, int ligne) {
@@ -414,15 +413,16 @@ Carte *get_carte_liste(Jeu *jeu) {
     return c;
 }
 
-char *affiche_cartes_joueur(Joueur *joueur) {
-    char *res = malloc(1024 * sizeof(char));
+void affiche_cartes_joueur(Joueur *joueur, char * buffer)
+{
+    char res[1024];
 
     for (int i = 0; i < 10; i++) {
         if (joueur->carte[i]->is_used == 0)
             snprintf(res + strlen(res), 1024, "Carte %02d > Numéro[%03d] Tete[%d]\n", i + 1, joueur->carte[i]->numero,
                      joueur->carte[i]->Tete);
     }
-    return res;
+    strcpy(buffer,res);
 }
 
 
@@ -431,9 +431,9 @@ void distribution_carte_joueurs(Jeu *jeu) {
         distribution_carte_joueur(jeu, jeu->joueur[i]);
 }
 
-char *recap_regle() {
-
-    char *tmp = malloc(255 * sizeof(char));
+void recap_regle(char * buffer)
+{
+    char tmp[1024];
 
     snprintf(tmp, 1024, BOLD_HIGH_WHITE"\t\nINFO DU JEU:\n"RESET);
     snprintf(tmp + strlen(tmp), 1024, "Le nombre de têtes maximal est de ");
@@ -445,11 +445,7 @@ char *recap_regle() {
     snprintf(tmp + strlen(tmp), 1024, "Nombre de bots: ");
     snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_bot);
 
-    char *res = malloc(strlen(tmp) * sizeof(char));
-    strcpy(res, tmp);
-    free(tmp);
-
-    return res;
+    strcpy(buffer, tmp);
 }
 
 
@@ -464,7 +460,8 @@ unsigned short get_nb_carte_utilisable_joueur(Jeu *jeu, short idJoueur) {
     return cpt;
 }
 
-char *min_max_defaite(Jeu *jeu) {
+void min_max_defaite(Jeu *jeu,char * buffer)
+{
     unsigned short min = jeu->joueur[0]->nb_defaite, max = jeu->joueur[0]->nb_defaite;
     unsigned short imin = 0, imax = 0;
 
@@ -479,19 +476,16 @@ char *min_max_defaite(Jeu *jeu) {
         }
     }
 
-    char *tmp = malloc(200 * sizeof(char));
+    char tmp[1024];
 
     //DANS TERMINAL
-    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenue le moins de défaite est le joueur %d avec %d défaites\n",
-             imin, min);
-    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenue le plus de défaite est le joueur %d avec %d défaites\n",
-             imax,
+    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenue le moins de défaite est le joueur %s avec %d défaites\n",
+             jeu->joueur[imin]->pseudo, min);
+    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenue le plus de défaite est le joueur %s avec %d défaites\n",
+             jeu->joueur[imax]->pseudo,
              max);
 
-    char *res = malloc(strlen(tmp) * sizeof(char));
-    strcpy(res, tmp);
-    free(tmp);
-    return res;
+    strcpy(buffer, tmp);
 }
 
 void affiche_nb_tete_joueurs(Jeu *jeu,char * buffer)
@@ -550,10 +544,10 @@ void force_fin_jeu() {
     exit(EXIT_SUCCESS);
 }
 
-char *statistique(Jeu *jeu)
+void statistique(Jeu *jeu, char * buffer)
 {
 
-    char *tmp = malloc(1024 * sizeof(char));
+    char tmp[1024];
 
     //DANS TERMINAL DES JOUEURS
     snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"\n\t[STATISTIQUES]\n"RESET);
@@ -566,16 +560,11 @@ char *statistique(Jeu *jeu)
     affiche_nb_tete_joueurs(jeu,tete);
     snprintf(tmp + strlen(tmp), 1024, "%s", tete);
 
-    char *def = min_max_defaite(jeu);
+    char def[1024];
+    min_max_defaite(jeu,def);
     snprintf(tmp + strlen(tmp), 1024, "%s", def); //Toujours en fin de stats
 
-    char *res = malloc(strlen(tmp) * sizeof(char));
-    strcpy(res, tmp);
-
-    free(tete);
-    free(def);
-    free(tmp);
-    return res;
+    strcpy(buffer, tmp);
 }
 
 
