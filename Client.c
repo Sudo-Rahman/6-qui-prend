@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
     if (connect(sock, (struct sockaddr *) &sin, sizeof(struct sockaddr)) == -1)
     {
-        perror(BOLD_RED"Connection impossible"RESET);
+        perror(BOLD_RED"Connexion impossible"RESET);
         exit(errno);
     }
 
