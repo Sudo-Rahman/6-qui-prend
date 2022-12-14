@@ -13,7 +13,7 @@
 #include "Color.h"
 
 #define MAX_JOUEURS 10
-#define MIN_JOUEURS 1
+#define MIN_JOUEURS 2
 
 
 typedef struct Carte {
@@ -35,7 +35,7 @@ typedef struct Jeu {
 
 unsigned int tour = 1, nb_partie = 0, nb_tete_max = 66, nb_manche_max = 999;
 unsigned char isOver = 0, nb_Joueur = 0, nb_bot = 0, nb_pret = 0;
-double duree_total = 0;
+double duree_total = 0.0;
 
 FILE *fichier_log;
 char date[40];

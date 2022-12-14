@@ -24,8 +24,7 @@ int PORT = 65534;
 #define BUF_SIZE 1024
 
 
-typedef struct
-{
+typedef struct {
     char *pseudo;
     short numero_joueur;
     short socket;
@@ -50,7 +49,7 @@ client *init_joueur();
 void *listen_joueurs();
 
 /**
- * @brief Fonction qui envoie le message en paramêtre à tous les joueurs.
+ * @brief Fonction qui envoie le message en paramètre à tous les joueurs.
  * @param joueurs
  * @param nb_joueur
  * @param message
@@ -110,8 +109,16 @@ void recv_client_data(client *c, char *buffer);
  */
 int carte_trop_petite(client *c);
 
+/**
+ * @details Fonction qui
+ * @param jeu
+ */
 void jeu_play(Jeu *jeu);
 
+
+/**
+ * @details Fonction pour stopper correctement le serveur
+ */
 void end_serveur();
 
 /**
@@ -120,8 +127,17 @@ void end_serveur();
  */
 void gestion_signaux_serveur(int signal_recu);
 
+/**
+ * @details Fonction qui retourne si le joueur est un bot ou pas
+ * @param nom
+ * @param c
+ * @return int
+ */
 int is_bot(char *nom, client *c);
 
+/**
+ * @details Fonction qui permet la gestion de la connexion d'un bot
+ */
 void ajout_bot();
 
 

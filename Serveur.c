@@ -20,15 +20,12 @@
 // ********* //
 client *clients[MAX_JOUEURS];
 struct timeval begin, end; // Pour calculer la durée d'une partie
-struct sockaddr_in serveur_addr = {0};
-Jeu jeu;
-
-FILE *fichier_log;
+struct sockaddr_in serveur_addr = {0}; // Socket
+Jeu jeu;//Le jeu
+FILE *fichier_log; //Le fichier log
 char date[40], pwd[256], nom_fichier[256];
 int nb_client = 0, serveur_socket;
-unsigned short nb_Vide = 0;
-
-unsigned char nb_ia = 0;
+unsigned char nb_ia = 0, nb_Vide = 0;
 
 
 // ******** //
@@ -45,8 +42,8 @@ int main(int argc, char **argv) {
 
     //Verification si dossier des LOGS existe + création si existe pas
     if (access(strcat(pwd, "/LOG"), F_OK) != 0) {
-        unsigned short check = mkdir("LOG", 0771);
-        if (!check) printf("SUCCÈS CREATION DU DOSSIER LOG\n");
+
+        if (!mkdir("LOG", 0771)) printf("SUCCÈS CREATION DU DOSSIER LOG\n");
         else {
             printf(BOLD_RED"IMPOSSIBLE DE CREER LE DOSSIER POUR LES LOGS\n"RESET);
             exit(EXIT_FAILURE);
@@ -66,7 +63,6 @@ int main(int argc, char **argv) {
     strcpy(nom_fichier, pwd);
     strcat(nom_fichier, "/");
     strcat(nom_fichier, date);
-
 
     //Creation du fichier dans le dossier LOG
     fichier_log = fopen(nom_fichier, "w");
@@ -116,7 +112,9 @@ int main(int argc, char **argv) {
 
 
     //Tant que conditions pour lancer le jeu sont pas bonnes, on attends
-    while (all_joueur_pret() != 1) {}
+    while (all_joueur_pret() != 1) {
+        usleep((useconds_t) .1);
+    }
 
 
     send_all_joueurs(clients, nb_client, BOLD_GREEN"\nTous les joueurs sont prêt la partie va commencer...\n"RESET);
@@ -125,10 +123,10 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < nb_client; i++) jeu.joueur[i] = clients[i]->joueur;
 
-
+    //Initialisation du jeu
     init_jeu(&jeu);
 
-    send_all_joueurs(clients, nb_client, recap_regle(jeu));
+    send_all_joueurs(clients, nb_client, recap_regle());
     send_all_joueurs(clients, nb_client, affiche_plateau(&jeu));
 
     gettimeofday(&begin, 0); //Initialisation du temps quand le jeu commence
@@ -144,7 +142,6 @@ int main(int argc, char **argv) {
 // ********* //
 // FONCTIONS //
 // ********* //
-
 
 void *joueur_pret(void *argv) {
     client *c = (client *) argv;
@@ -229,19 +226,16 @@ void jeu_play(Jeu *jeu) {
                 if (retour == 0 || retour == -1) {
                     client *c;
                     for (int j = 0; j < nb_client; ++j) {
-                        if (clients[j]->joueur == joueurs[i])
-                            c = clients[j];
-
+                        if (clients[j]->joueur == joueurs[i]) c = clients[j];
                     }
                     int ligne = get_pos_carte_mini(jeu, joueurs[i]->carte_choisie->numero) / 6;
-                    if (retour == -1)
-                        ligne = carte_trop_petite(c);
+                    if (retour == -1) ligne = carte_trop_petite(c);
                     place_carte_si_trop_petite_ou_derniere_ligne(jeu, ligne, c->joueur);
                     printf("joueur : %s tete : %i\n", clients[i]->pseudo, c->joueur->nb_penalite);
                     fflush(stdout);
                 }
 
-                if (jeu->joueur[i]->nb_penalite >= nb_tete_max) {
+                if (jeu->joueur[i]->nb_penalite >= nb_tete_max && !isOver) {
 
                     //Au Serveur
                     printf(BOLD_YELLOW"\n***FIN DE LA PARTIE***\n"RESET);
@@ -280,7 +274,7 @@ void jeu_play(Jeu *jeu) {
 
 
             //Cas où tous les joueurs n'ont plus de carte, on redonne des cartes et on change le tour
-            if (nb_Vide == nb_Joueur) {
+            if (nb_Vide == nb_Joueur && !isOver) {
                 isOver = 3;
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***MANCHE TERMINE***\n"RESET);
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"\n***LA PARTIE CONTINUE***\n"RESET);
@@ -294,7 +288,7 @@ void jeu_play(Jeu *jeu) {
 
 
             //Cas ou nb de tour max atteint
-            if (tour >= nb_manche_max) {
+            if (tour >= nb_manche_max && !isOver) {
                 //Au serveur
                 printf(BOLD_YELLOW"\n***FIN DE LA PARTIE***\n"RESET);
                 printf(BOLD_YELLOW"***NOMBRE DE TOURS MAXIMAL ATTEINT***\n"RESET);
@@ -327,7 +321,6 @@ void jeu_play(Jeu *jeu) {
 
         } // FIN IF JEU TOURNE
 
-
             //Cas ou partie est finie
         else {
             send_all_joueurs(clients, nb_client, BOLD_YELLOW"\nEn attente du serveur...\n"RESET);
@@ -336,7 +329,7 @@ void jeu_play(Jeu *jeu) {
             scanf(" %c", &answer);
             if (answer == 'y' || answer == 'Y' || answer == '\n') {
                 change_limite_jeu();
-                send_all_joueurs(clients, nb_client, recap_regle(*jeu));
+                send_all_joueurs(clients, nb_client, recap_regle());
                 free_jeu(jeu);
                 isOver = 0;
                 nb_partie++;
@@ -344,6 +337,7 @@ void jeu_play(Jeu *jeu) {
                 send_all_joueurs(clients, nb_client, BOLD_GREEN"La partie va commencer...\n"RESET);
                 printf(BOLD_GREEN"La partie va commencer...\n"RESET);
                 send_all_joueurs(clients, nb_client, affiche_plateau(jeu));
+                gettimeofday(&begin, 0); //Initialisation du temps quand le jeu commence
 
             } else if (answer == 'n' || answer == 'N' || answer == 'x') {
                 send_all_joueurs(clients, nb_client, BOLD_YELLOW"Le serveur arrête stop le jeu...\n"RESET);
