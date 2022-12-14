@@ -76,6 +76,8 @@ int main(int argc, char **argv) {
     //GESTION DES SIGNAUX pour fermer le programme correctement
     signal(SIGINT, gestion_signaux_serveur);
     signal(SIGTERM, gestion_signaux_serveur);
+    signal(SIGABRT, gestion_signaux_serveur);
+
 
     if (argc == 2) {
         PORT = atoi(argv[1]);
@@ -656,6 +658,14 @@ void gestion_signaux_serveur(int signal_recu) {
             fprintf(fichier_log, "SIGNAL %d REÇU\n", signal_recu);
             end_serveur();
             break;
+
+            //SIGNAL QUAND PROGRAMME CRASH
+        case SIGABRT:
+            printf(BOLD_YELLOW"\nSIGNAL SIGABRT RECU\n"RESET);
+            fprintf(fichier_log, "SIGNAL %d REÇU\n", signal_recu);
+            end_serveur();
+            break;
+
         default:
             printf(BOLD_YELLOW"\nSIGNAL RECU > %d\n"RESET, signal_recu);
             fprintf(fichier_log, "SIGNAL %d REÇU\n", signal_recu);
@@ -664,7 +674,7 @@ void gestion_signaux_serveur(int signal_recu) {
 }
 
 void affiche_temps_jeu(double duree) {
-    char *message = malloc(512 * sizeof(char));
+    char *message = malloc(1024 * sizeof(char));
     printf("Durée de la partie [%d] > %.3f secondes\n", nb_partie + 1, duree);
     printf("Temps de jeu total :  %.3f secondes\n", duree_total);
     fprintf(fichier_log, "Durée de la partie [%d] > %.3f secondes\n", nb_partie + 1, duree);

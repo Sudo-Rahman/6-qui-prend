@@ -34,7 +34,7 @@ typedef struct Jeu {
 } Jeu;
 
 unsigned int tour = 1, nb_partie = 0, nb_tete_max = 66, nb_manche_max = 999;
-unsigned char isOver = 0, nb_Joueur = 0, nb_bot = 0,nb_pret = 0;
+unsigned char isOver = 0, nb_Joueur = 0, nb_bot = 0, nb_pret = 0;
 double duree_total = 0;
 
 FILE *fichier_log;
@@ -251,7 +251,6 @@ void init_jeu(Jeu *jeu) {
     //Carte de la premiere colonne du plateau distribué
     creation_premiere_colonne_plateau(jeu);
     distribution_carte_joueurs(jeu);
-//    affiche_plateau(jeu);
 }
 
 void free_jeu(Jeu *jeu) {
@@ -435,7 +434,7 @@ void distribution_carte_joueurs(Jeu *jeu) {
 
 char *recap_regle() {
 
-    char *tmp = malloc(255 * sizeof(char));
+    char *tmp = malloc(1024 * sizeof(char));
 
     snprintf(tmp, 1024, BOLD_HIGH_WHITE"\t\nINFO DU JEU:\n"RESET);
     snprintf(tmp + strlen(tmp), 1024, "Le nombre de têtes maximal est de ");
@@ -480,12 +479,12 @@ char *min_max_defaite(Jeu jeu) {
         }
     }
 
-    char *tmp = malloc(200 * sizeof(char));
+    char *tmp = malloc(1024 * sizeof(char));
 
     //DANS TERMINAL
-    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenue le moins de défaite est le joueur %d avec %d défaites\n",
+    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenu le moins de défaite est le joueur %d avec %d défaites\n",
              imin, min);
-    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenue le plus de défaite est le joueur %d avec %d défaites\n",
+    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenu le plus de défaite est le joueur %d avec %d défaites\n",
              imax,
              max);
 
