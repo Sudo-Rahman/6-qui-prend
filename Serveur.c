@@ -435,9 +435,7 @@ int all_joueur_pret() {
     if (nb_client == 0) return 0;
 
     unsigned char compteur = 0;
-    for (int i = 0; i < nb_client; i++) {
-        if (clients[i]->pret == 1) compteur++;
-    }
+    for (int i = 0; i < nb_client; i++) if (clients[i]->pret == 1) compteur++;
 
     //Si tous les joueurs sont prets et que le nombre est bon le jeu commence
     if (compteur == nb_client && compteur >= MIN_JOUEURS) return 1;
@@ -574,8 +572,8 @@ void *listen_choix_carte_bot(void *argv) {
 }
 
 void client_quit(client *c) {
-    char *mess = (char *) malloc(128 * sizeof(char));
-    snprintf(mess, strlen(mess), BOLD_YELLOW"\nLe client %s a quitté la partie\n"RESET, c->pseudo);
+    char *mess = (char *) malloc((128 * sizeof(char)) + strlen(c->pseudo));
+    snprintf(mess, 128 + strlen(c->pseudo), BOLD_YELLOW"\nLe client %s a quitté la partie\n"RESET, c->pseudo);
     fprintf(fichier_log, "\nLe client %s a quitté la partie\n", c->pseudo);
     printf("%s\n", mess);
     send_all_joueurs(clients, nb_client, mess);
@@ -603,15 +601,10 @@ int carte_trop_petite(client *c) {
     char *buffer = (char *) malloc(1024 * sizeof(char));
 
     if (c->bot_or_not == 1) {
-
         char mes[1024];
-
         send(c->socket, "1234\0", 5, 0);
-
-
         char buffer[1024];
         recv_client_data(c, buffer);
-
         return atoi(buffer) - 1;
     }
 
@@ -711,7 +704,7 @@ void end_serveur() {
 
 void ajout_bot() {
 
-    int x = fork();
+    short x = fork();
     char *nom_programme = "bot";
     char port[1024];
     snprintf(port, 1024, "%d", PORT);

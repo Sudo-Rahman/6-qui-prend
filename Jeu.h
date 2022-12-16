@@ -104,7 +104,7 @@ char *min_max_defaite(Jeu jeu);
 void print_tableau(Jeu jeu);
 
 /**
- * @details Fonction qui force la fin du jeu si l'utilisateur appuie sur 'x'
+ * @details Fonction qui force la fin du jeu
  */
 void force_fin_jeu();
 
