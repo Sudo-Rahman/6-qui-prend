@@ -15,6 +15,9 @@
 #define MAX_JOUEURS 10
 #define MIN_JOUEURS 2
 
+#define MALLOC_SIZE 1024
+#define MALLOC malloc(MALLOC_SIZE * sizeof (char ))
+
 
 typedef struct Carte {
     unsigned char numero, Tete, is_picked, is_used;
@@ -301,18 +304,19 @@ Joueur **get_ordre_joueur_tour(Jeu *jeu) {
 }
 
 void affiche_plateau(Jeu *jeu, char * buffer) {
-    char res[1024];
+    char *res =  MALLOC;
 
-    snprintf(res, 1024, BOLD_HIGH_WHITE"\t\t\t\t\t\tPLATEAU:\n"RESET);
+    snprintf(res, MALLOC_SIZE, BOLD_HIGH_WHITE"\t\t\t\t\t\tPLATEAU:\n"RESET);
 
     for (int i = 0; i < 4; i++) {
-        snprintf(res + strlen(res), 1024, "Ligne %u\t", i + 1);
+        snprintf(res + strlen(res), MALLOC_SIZE, "Ligne %u\t", i + 1);
         for (int j = 0; j < 6; j++)
-            snprintf(res + strlen(res), 1024, BOLD_HIGH_WHITE"\t[%03d-%d]\t"RESET, jeu->plateau[i][j].numero,
+            snprintf(res + strlen(res), MALLOC_SIZE, BOLD_HIGH_WHITE"\t[%03d-%d]\t"RESET, jeu->plateau[i][j].numero,
                      jeu->plateau[i][j].Tete);
-        snprintf(res + strlen(res), 1024, "\n");
+        snprintf(res + strlen(res), MALLOC_SIZE, "\n");
     }
     strcpy(buffer,res);
+    free(res);
 }
 
 unsigned char get_pos_carte_derniere_ligne(Jeu *jeu, int ligne) {
@@ -415,14 +419,15 @@ Carte *get_carte_liste(Jeu *jeu) {
 
 void affiche_cartes_joueur(Joueur *joueur, char * buffer)
 {
-    char res[1024];
-
+    char *res =  MALLOC;
+    snprintf(res, MALLOC_SIZE, "");
     for (int i = 0; i < 10; i++) {
         if (joueur->carte[i]->is_used == 0)
-            snprintf(res + strlen(res), 1024, "Carte %02d > Numéro[%03d] Tete[%d]\n", i + 1, joueur->carte[i]->numero,
+            snprintf(res + strlen(res), MALLOC_SIZE, "Carte %02d > Numéro[%03d] Tete[%d]\n", i + 1, joueur->carte[i]->numero,
                      joueur->carte[i]->Tete);
     }
     strcpy(buffer,res);
+    free(res);
 }
 
 
@@ -433,19 +438,20 @@ void distribution_carte_joueurs(Jeu *jeu) {
 
 void recap_regle(char * buffer)
 {
-    char tmp[1024];
+    char *tmp = MALLOC;
 
-    snprintf(tmp, 1024, BOLD_HIGH_WHITE"\t\nINFO DU JEU:\n"RESET);
-    snprintf(tmp + strlen(tmp), 1024, "Le nombre de têtes maximal est de ");
-    snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d"RESET, nb_tete_max);
-    snprintf(tmp + strlen(tmp), 1024, "\nLe nombre de tours maximal est de ");
-    snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_manche_max);
-    snprintf(tmp + strlen(tmp), 1024, "Nombre de joueurs total bot confondu : ");
-    snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_joueur);
-    snprintf(tmp + strlen(tmp), 1024, "Nombre de bots: ");
-    snprintf(tmp + strlen(tmp), 1024, BOLD_MAGENTA"%d\n"RESET, nb_bot);
+    snprintf(tmp, MALLOC_SIZE, BOLD_HIGH_WHITE"\t\nINFO DU JEU:\n"RESET);
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "Le nombre de têtes maximal est de ");
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, BOLD_MAGENTA"%d"RESET, nb_tete_max);
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "\nLe nombre de tours maximal est de ");
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, BOLD_MAGENTA"%d\n"RESET, nb_manche_max);
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "Nombre de joueurs total bot confondu : ");
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, BOLD_MAGENTA"%d\n"RESET, nb_joueur);
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "Nombre de bots: ");
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, BOLD_MAGENTA"%d\n"RESET, nb_bot);
 
     strcpy(buffer, tmp);
+    free(tmp);
 }
 
 
@@ -476,28 +482,35 @@ void min_max_defaite(Jeu *jeu,char * buffer)
         }
     }
 
-    char tmp[1024];
+    char *tmp = MALLOC;
+
+    snprintf(tmp, MALLOC_SIZE, "");
+
 
     //DANS TERMINAL
-    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenue le moins de défaite est le joueur %s avec %d défaites\n",
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "Le joueur ayant obtenue le moins de défaite est le joueur %s avec %d défaites\n",
              jeu->joueur[imin]->pseudo, min);
-    snprintf(tmp + strlen(tmp), 1024, "Le joueur ayant obtenue le plus de défaite est le joueur %s avec %d défaites\n",
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "Le joueur ayant obtenue le plus de défaite est le joueur %s avec %d défaites\n",
              jeu->joueur[imax]->pseudo,
              max);
 
     strcpy(buffer, tmp);
+    free(tmp);
 }
 
 void affiche_nb_tete_joueurs(Jeu *jeu,char * buffer)
 {
-    char tmp[1024];
+    char *tmp = MALLOC;
+    snprintf(tmp, MALLOC_SIZE, "");
+
     for (short i = 0; i < nb_joueur; i++)
-        snprintf(tmp + strlen(tmp), 512, "Le joueur %s possède %d têtes \n", jeu->joueur[i]->pseudo,
+        snprintf(tmp + strlen(tmp), MALLOC_SIZE, "Le joueur %s possède %d têtes \n", jeu->joueur[i]->pseudo,
                  jeu->joueur[i]->nb_penalite);
 
     fprintf(fichier_log, "\n");
 
     strcpy(buffer, tmp);
+    free(tmp);
 }
 
 
@@ -547,24 +560,30 @@ void force_fin_jeu() {
 void statistique(Jeu *jeu, char * buffer)
 {
 
-    char tmp[1024];
+    char *tmp = MALLOC;
+
+    snprintf(tmp, MALLOC_SIZE, "");
 
     //DANS TERMINAL DES JOUEURS
-    snprintf(tmp + strlen(tmp), 1024, BOLD_CYAN"\n\t[STATISTIQUES]\n"RESET);
-    snprintf(tmp + strlen(tmp), 1024, "\nNombre de parties joué : %d\n", nb_partie + 1);
-    snprintf(tmp + strlen(tmp), 1024, "Nombre de tours effectué : %d\n", tour);
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, BOLD_CYAN"\n\t[STATISTIQUES]\n"RESET);
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "\nNombre de parties joué : %d\n", nb_partie + 1);
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "Nombre de tours effectué : %d\n", tour);
 
-    snprintf(tmp + strlen(tmp), 1024, "Moyenne des têtes obtenues : %d\n", moyenne_des_tetes(jeu));
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "Moyenne des têtes obtenues : %d\n", moyenne_des_tetes(jeu));
 
-    char tete[1024];
+    char *tete = MALLOC;
     affiche_nb_tete_joueurs(jeu,tete);
-    snprintf(tmp + strlen(tmp), 1024, "%s", tete);
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "%s", tete);
 
-    char def[1024];
+    char *def= MALLOC;
     min_max_defaite(jeu,def);
-    snprintf(tmp + strlen(tmp), 1024, "%s", def); //Toujours en fin de stats
+    snprintf(tmp + strlen(tmp), MALLOC_SIZE, "%s", def); //Toujours en fin de stats
 
     strcpy(buffer, tmp);
+
+    free(tmp);
+    free(tete);
+    free(def);
 }
 
 

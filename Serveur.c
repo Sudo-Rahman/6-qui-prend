@@ -521,13 +521,13 @@ void *listen_choix_carte_joueur(void *argv)
         char buffer[1024];
 
         //AFFICHAGE DES INFOS DU JOUEUR
-        snprintf(message + strlen(message), 1024, BOLD_CYAN"\n\t*** ROUND [%d] ***\n"RESET, tour);
-        snprintf(message + strlen(message), 1024, BOLD_CYAN"\n\t*** MANCHE [%d] ***\n\n"RESET,
+        snprintf(message, MALLOC_SIZE, BOLD_CYAN"\n\t*** ROUND [%d] ***\n"RESET, tour);
+        snprintf(message + strlen(message), MALLOC_SIZE, BOLD_CYAN"\n\t*** MANCHE [%d] ***\n\n"RESET,
                  abs(get_nb_carte_utilisable_joueur(&jeu, (unsigned short) c->numero_joueur) - 10));
-        snprintf(message + strlen(message), 1024, BOLD_BLUE"Joueur %s, il vous reste %d cartes:\n"RESET,
+        snprintf(message + strlen(message), MALLOC_SIZE, BOLD_BLUE"Joueur %s, il vous reste %d cartes:\n"RESET,
                  c->joueur->pseudo,
                  get_nb_carte_utilisable_joueur(&jeu, (unsigned short) c->numero_joueur));
-        snprintf(message + strlen(message), 1024, "Vous possedez %d tetes\n",
+        snprintf(message + strlen(message), MALLOC_SIZE, "Vous possedez %d tetes\n",
                  c->joueur[c->numero_joueur].nb_penalite);
         send(c->socket, message, strlen(message), 0);
 
